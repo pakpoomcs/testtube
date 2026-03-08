@@ -5,22 +5,22 @@ module.exports = {
     extend: {
       colors: {
         // Backgrounds
-        base: "#0e1a2b",
-        elevated: "#132030",
-        card: "#172639",
-        hover: "#1d2f45",
+        base: "rgb(var(--color-base) / <alpha-value>)",
+        elevated: "rgb(var(--color-elevated) / <alpha-value>)",
+        card: "rgb(var(--color-card) / <alpha-value>)",
+        hover: "rgb(var(--color-hover) / <alpha-value>)",
         // Borders
-        border: "#1f3347",
-        "border-strong": "#2a4460",
+        border: "rgb(var(--color-border) / <alpha-value>)",
+        "border-strong": "rgb(var(--color-border-strong) / <alpha-value>)",
         // Text
-        "text-primary": "#e8f0f7",
-        "text-secondary": "#7a9bb5",
-        "text-tertiary": "#3d5a73",
+        "text-primary": "rgb(var(--color-text-primary) / <alpha-value>)",
+        "text-secondary": "rgb(var(--color-text-secondary) / <alpha-value>)",
+        "text-tertiary": "rgb(var(--color-text-tertiary) / <alpha-value>)",
         // Accent
         teal: {
-          DEFAULT: "#00c2a8",
-          dark: "#009e88",
-          light: "rgba(0,194,168,0.12)",
+          DEFAULT: "rgb(var(--color-teal) / <alpha-value>)",
+          dark: "rgb(var(--color-teal-dark) / <alpha-value>)",
+          light: "rgb(var(--color-teal) / 0.14)",
         },
         // Status
         success: "#22c55e",

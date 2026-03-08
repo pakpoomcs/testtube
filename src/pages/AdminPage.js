@@ -124,7 +124,7 @@ function AdminPage() {
           </div>
         )}
 
-        <div className="grid gap-6" style={{ gridTemplateColumns: "200px 1fr" }}>
+        <div className="grid gap-6 md:grid-cols-[200px_minmax(0,1fr)]">
 
           {/* Sidebar */}
           <div className="bg-elevated border border-border rounded-2xl p-4 flex flex-col gap-1.5 self-start">

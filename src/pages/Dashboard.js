@@ -74,14 +74,14 @@ function Dashboard() {
   }
 
   if (loading) return (
-    <div className="min-h-screen bg-base flex items-center justify-center">
+    <div className="tt-page flex items-center justify-center">
       <p className="font-body text-text-secondary">Loading your dashboard...</p>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-base">
-      <div className="max-w-[900px] mx-auto px-6 py-10 pb-24 flex flex-col gap-6">
+    <div className="tt-page">
+      <div className="mx-auto flex max-w-[900px] flex-col gap-6 px-6 pb-24 pt-10">
 
         {/* Welcome */}
         <div className="flex justify-between items-center flex-wrap gap-4">
@@ -89,21 +89,21 @@ function Dashboard() {
             <h1 className="font-heading text-[40px] text-text-primary tracking-wide leading-none">Your Dashboard</h1>
             <p className="font-body text-[14px] text-text-secondary mt-2">{user.email}</p>
           </div>
-          <button onClick={() => navigate("/")}
-            className="px-6 py-3 bg-teal text-base rounded-xl font-body font-semibold text-[14px] border-none cursor-pointer hover:opacity-90 transition-opacity">
+          <button onClick={() => navigate("/practice")}
+            className="tt-cta">
             Take a Test →
           </button>
         </div>
 
         {/* Stats */}
-        <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))" }}>
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4">
           {[
             { label: "Tests Taken", value: totalTests, unit: "" },
             { label: "Average Score", value: avgScore, unit: "%" },
             { label: "Best Score", value: bestScore, unit: "%" },
             { label: "Questions Answered", value: totalQuestions, unit: "" },
           ].map((stat) => (
-            <div key={stat.label} className="bg-elevated border border-border rounded-2xl p-6 flex flex-col gap-1.5">
+            <div key={stat.label} className="tt-panel p-6 flex flex-col gap-1.5">
               <p className="font-heading text-[40px] text-teal tracking-wide leading-none">{stat.value}{stat.unit}</p>
               <p className="font-body text-[13px] text-text-secondary">{stat.label}</p>
             </div>
@@ -111,12 +111,11 @@ function Dashboard() {
         </div>
 
         {totalTests === 0 ? (
-          <div className="bg-elevated border border-border rounded-2xl p-16 flex flex-col items-center gap-3 text-center">
+          <div className="tt-panel p-16 flex flex-col items-center gap-3 text-center">
             <span className="text-[48px]">📝</span>
             <h2 className="font-body font-bold text-[20px] text-text-primary">No tests taken yet</h2>
             <p className="font-body text-[14px] text-text-secondary">Complete your first test to see your performance here.</p>
-            <button onClick={() => navigate("/")}
-              className="mt-2 px-6 py-3 bg-teal text-base rounded-xl font-body font-semibold text-[14px] border-none cursor-pointer">
+            <button onClick={() => navigate("/practice")} className="tt-cta mt-2">
               Browse Exams →
             </button>
           </div>
@@ -124,7 +123,7 @@ function Dashboard() {
           <>
             {/* Topic performance */}
             {topicStats.length > 0 && (
-              <div className="bg-elevated border border-border rounded-2xl p-6 flex flex-col gap-5">
+              <div className="tt-panel p-6 flex flex-col gap-5">
                 <h2 className="font-body font-bold text-[17px] text-text-primary">Performance by Topic</h2>
                 {topicStats.map((t) => (
                   <div key={t.topic} className="flex flex-col gap-1.5">
@@ -144,10 +143,10 @@ function Dashboard() {
             )}
 
             {/* Test history */}
-            <div className="bg-elevated border border-border rounded-2xl p-6 flex flex-col gap-4">
+            <div className="tt-panel p-6 flex flex-col gap-4">
               <h2 className="font-body font-bold text-[17px] text-text-primary">Test History</h2>
               {sessions.map((session) => (
-                <div key={session.id} className="flex justify-between items-center p-4 bg-card border border-border rounded-xl gap-4">
+                <div key={session.id} className="tt-panel-soft flex items-center justify-between gap-4 p-4">
                   <div className="flex items-center gap-4">
                     <div className={`w-12 h-12 rounded-full flex items-center justify-center font-body font-bold text-[12px] text-base flex-shrink-0 ${scoreColorClass(session.score_percent)}`}>
                       {session.score_percent}%

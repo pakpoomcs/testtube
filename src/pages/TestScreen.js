@@ -1,11 +1,20 @@
 // src/pages/TestScreen.js
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { useAuth } from "../context/AuthContext";
 
+function normalizeDifficulty(value) {
+  const lower = String(value || "").trim().toLowerCase();
+  if (lower === "easy") return "Easy";
+  if (lower === "medium") return "Medium";
+  if (lower === "hard") return "Hard";
+  return "";
+}
+
 function TestScreen() {
   const { examId } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -18,7 +27,14 @@ function TestScreen() {
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { fetchExamAndQuestions(); }, [examId]); // eslint-disable-line
+  const selectedDifficulties = React.useMemo(() => {
+    const raw = new URLSearchParams(location.search).get("difficulty");
+    if (!raw) return [];
+    const values = raw.split(",").map(normalizeDifficulty).filter(Boolean);
+    return Array.from(new Set(values));
+  }, [location.search]);
+
+  useEffect(() => { fetchExamAndQuestions(); }, [examId, location.search]); // eslint-disable-line
 
   async function fetchExamAndQuestions() {
     try {
@@ -47,8 +63,12 @@ function TestScreen() {
         return q;
       });
 
-      enriched.sort(() => Math.random() - 0.5);
-      setQuestions(enriched);
+      const filteredQuestions = selectedDifficulties.length
+        ? enriched.filter((q) => selectedDifficulties.includes(normalizeDifficulty(q.difficulty)))
+        : enriched;
+
+      filteredQuestions.sort(() => Math.random() - 0.5);
+      setQuestions(filteredQuestions);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -165,8 +185,12 @@ function TestScreen() {
   );
   if (questions.length === 0) return (
     <div className="min-h-screen bg-base flex flex-col items-center justify-center gap-4 p-6">
-      <p className="font-body text-text-secondary">No questions yet for {exam?.name}.</p>
-      <button onClick={() => navigate("/")} className="px-6 py-3 bg-teal text-base rounded-xl font-body font-bold border-none cursor-pointer">
+      <p className="font-body text-text-secondary">
+        {selectedDifficulties.length
+          ? `No ${selectedDifficulties.join(" / ")} questions available for ${exam?.name}.`
+          : `No questions yet for ${exam?.name}.`}
+      </p>
+      <button onClick={() => navigate("/practice")} className="px-6 py-3 bg-teal text-base rounded-xl font-body font-bold border-none cursor-pointer">
         Go Back
       </button>
     </div>
@@ -180,7 +204,7 @@ function TestScreen() {
 
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-        <button onClick={() => navigate("/")}
+        <button onClick={() => navigate("/practice")}
           className="bg-transparent border-none text-text-secondary text-[18px] cursor-pointer px-2 py-1 rounded-md hover:bg-elevated transition-colors">
           ✕
         </button>
@@ -201,6 +225,11 @@ function TestScreen() {
         <span className="font-body text-[11px] font-semibold text-teal bg-teal/10 px-3 py-1 rounded-full">
           {getTypeLabel(currentQuestion?.question_type)}
         </span>
+        {currentQuestion?.difficulty && (
+          <span className="font-body text-[11px] text-text-secondary bg-elevated px-3 py-1 rounded-full border border-border">
+            {normalizeDifficulty(currentQuestion.difficulty) || currentQuestion.difficulty}
+          </span>
+        )}
         {currentQuestion?.topic && (
           <span className="font-body text-[11px] text-text-secondary bg-elevated px-3 py-1 rounded-full border border-border">
             {currentQuestion.topic}

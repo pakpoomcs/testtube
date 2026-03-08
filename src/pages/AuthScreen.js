@@ -53,12 +53,14 @@ function AuthScreen() {
   const isSignIn = mode === "signin";
 
   return (
-    <div className="min-h-screen bg-base flex items-center justify-center p-6 relative overflow-hidden">
+    <div className="tt-page relative flex items-center justify-center overflow-hidden p-6">
       {/* Top background accent */}
-      <div className="absolute top-0 left-0 right-0 h-1/2 bg-elevated z-0" />
+      <div className="absolute left-0 right-0 top-0 z-0 h-1/2 bg-elevated/45" />
+      <div className="absolute -left-20 top-16 h-44 w-44 rounded-full bg-teal/22 blur-3xl" />
+      <div className="absolute -right-8 bottom-12 h-52 w-52 rounded-full bg-sky-400/20 blur-3xl" />
 
       {/* Card */}
-      <div className="bg-card border border-border rounded-2xl w-full max-w-[420px] relative z-10 overflow-hidden shadow-lg">
+      <div className="tt-panel relative z-10 w-full max-w-[430px] overflow-hidden">
 
         {/* Tab switcher */}
         <div className="flex border-b border-border">
@@ -68,8 +70,8 @@ function AuthScreen() {
               onClick={() => switchMode(m)}
               className={`flex-1 py-4 text-[15px] font-body cursor-pointer border-none transition-all duration-200 ${
                 mode === m
-                  ? "font-bold text-text-primary bg-card border-b-2 border-teal"
-                  : "font-medium text-text-tertiary bg-base border-b-2 border-transparent"
+                  ? "bg-card/40 font-bold text-text-primary border-b-2 border-teal"
+                  : "bg-transparent font-medium text-text-tertiary border-b-2 border-transparent"
               }`}
             >
               {m === "signin" ? "Sign In" : "Sign Up"}
@@ -79,12 +81,9 @@ function AuthScreen() {
 
         {/* Animated content */}
         <div
-          className="p-8 flex flex-col gap-4"
-          style={{
-            opacity: animating ? 0 : 1,
-            transform: animating ? "translateY(6px)" : "translateY(0)",
-            transition: "opacity 0.2s ease, transform 0.2s ease",
-          }}
+          className={`flex flex-col gap-4 p-8 transition-all duration-200 ${
+            animating ? "translate-y-1.5 opacity-0" : "translate-y-0 opacity-100"
+          }`}
         >
           {/* Logo */}
           <div className="flex items-center gap-2">
@@ -123,7 +122,7 @@ function AuthScreen() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="px-4 py-3 rounded-xl border border-border bg-elevated text-text-primary text-[15px] font-body outline-none focus:border-teal transition-colors"
+              className="rounded-xl border border-border/60 bg-card/60 px-4 py-3 text-[15px] font-body text-text-primary outline-none transition-colors focus:border-teal"
             />
           </div>
 
@@ -137,7 +136,7 @@ function AuthScreen() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="w-full px-4 py-3 pr-12 rounded-xl border border-border bg-elevated text-text-primary text-[15px] font-body outline-none focus:border-teal transition-colors"
+                className="w-full rounded-xl border border-border/60 bg-card/60 px-4 py-3 pr-12 text-[15px] font-body text-text-primary outline-none transition-colors focus:border-teal"
               />
               <button
                 onClick={() => setShowPassword(!showPassword)}
@@ -159,7 +158,7 @@ function AuthScreen() {
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className={`w-full py-[14px] rounded-xl text-[16px] font-bold font-body text-white border-none cursor-pointer transition-opacity mt-1 ${
+            className={`mt-1 w-full rounded-xl py-[14px] text-[16px] font-body font-bold text-white border-none cursor-pointer shadow-[0_10px_26px_rgba(24,211,188,0.34)] transition-all duration-200 hover:-translate-y-0.5 hover:brightness-105 ${
               isSignIn ? "bg-teal" : "bg-teal"
             } ${loading ? "opacity-60" : "opacity-100"}`}
           >

@@ -36,9 +36,9 @@ function ReportScreen() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  if (!location.state) { navigate("/"); return null; }
+  if (!location.state) { navigate("/practice"); return null; }
   const { answers, questions, exam } = location.state || {};
-  if (!questions || questions.length === 0) { navigate("/"); return null; }
+  if (!questions || questions.length === 0) { navigate("/practice"); return null; }
 
   const totalQuestions = questions.length;
   const correctCount = questions.filter((q, i) => checkCorrect(q, answers[i])).length;
@@ -63,11 +63,11 @@ function ReportScreen() {
   const { grade, color, bg, message } = getGrade();
 
   return (
-    <div className="min-h-screen bg-base">
+    <div className="tt-page">
 
       {/* Top bar */}
-      <div className="bg-elevated border-b border-border px-6 py-4 flex justify-between items-center">
-        <button onClick={() => navigate("/")}
+      <div className="flex items-center justify-between border-b border-border/60 bg-elevated/55 px-6 py-4 backdrop-blur-sm">
+        <button onClick={() => navigate("/practice")}
           className="bg-transparent border border-border text-text-secondary px-4 py-1.5 rounded-lg text-[13px] font-body cursor-pointer hover:border-border-strong transition-colors">
           ← Exams
         </button>
@@ -75,10 +75,10 @@ function ReportScreen() {
         <span className="font-body text-[13px] text-text-tertiary">Report</span>
       </div>
 
-      <div className="max-w-[700px] mx-auto px-6 py-8 pb-24 flex flex-col gap-5">
+      <div className="mx-auto flex max-w-[700px] flex-col gap-5 px-6 pb-24 pt-8">
 
         {/* Score hero */}
-        <div className="bg-elevated border border-border rounded-2xl p-10 flex flex-col items-center gap-3 text-center">
+        <div className="tt-panel p-10 flex flex-col items-center gap-3 text-center">
           <div className={`w-16 h-16 rounded-full border-2 flex items-center justify-center font-heading text-[32px] ${bg} ${color}`}>
             {grade}
           </div>
@@ -90,7 +90,7 @@ function ReportScreen() {
         </div>
 
         {/* Topic breakdown */}
-        <div className="bg-elevated border border-border rounded-2xl p-6 flex flex-col gap-4">
+        <div className="tt-panel p-6 flex flex-col gap-4">
           <h3 className="font-body font-bold text-[16px] text-text-primary">Performance by Topic</h3>
           {Object.entries(topicBreakdown).map(([topic, stats]) => {
             const pct = Math.round((stats.correct / stats.total) * 100);
@@ -111,7 +111,7 @@ function ReportScreen() {
         </div>
 
         {/* Suggestions */}
-        <div className="bg-elevated border border-border rounded-2xl p-6 flex flex-col gap-3">
+        <div className="tt-panel p-6 flex flex-col gap-3">
           <h3 className="font-body font-bold text-[16px] text-text-primary">💡 How to Improve</h3>
           {Object.entries(topicBreakdown).filter(([, s]) => s.correct / s.total < 0.75).length === 0 ? (
             <p className="font-body text-[14px] text-text-secondary">No major weak areas — try a harder difficulty next time!</p>
@@ -128,12 +128,12 @@ function ReportScreen() {
         </div>
 
         {/* Question review */}
-        <div className="bg-elevated border border-border rounded-2xl p-6 flex flex-col gap-3">
+        <div className="tt-panel p-6 flex flex-col gap-3">
           <h3 className="font-body font-bold text-[16px] text-text-primary">📝 Question Review</h3>
           {questions.map((q, i) => {
             const isCorrect = checkCorrect(q, answers[i]);
             return (
-              <div key={i} className={`p-4 rounded-xl border-l-4 bg-card ${isCorrect ? "border-l-success" : "border-l-danger"}`}>
+              <div key={i} className={`tt-panel-soft border-l-4 p-4 ${isCorrect ? "border-l-success" : "border-l-danger"}`}>
                 <p className="font-body font-semibold text-[14px] text-text-primary leading-relaxed mb-1.5">
                   {i + 1}. {q.question_text}
                 </p>
@@ -152,7 +152,7 @@ function ReportScreen() {
 
         {/* Buttons */}
         <div className="flex gap-3">
-          <button onClick={() => navigate("/")}
+          <button onClick={() => navigate("/practice")}
             className="flex-1 py-4 bg-transparent border border-border text-text-primary rounded-xl font-body font-semibold text-[15px] cursor-pointer hover:border-border-strong transition-colors">
             ← Back to Exams
           </button>
