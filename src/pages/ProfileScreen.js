@@ -2,9 +2,6 @@
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../supabaseClient";
-import { theme } from "../styles/theme";
-
-const { colors, fonts } = theme;
 
 const EXAMS = ["IELTS", "TOEFL", "TOEIC", "SAT", "GED", "DET", "ONET", "TCAS"];
 const LEVELS = [
@@ -42,9 +39,7 @@ function ProfileScreen() {
     setSaving(true);
     try {
       const { error } = await supabase.from("profiles").upsert({
-        id: user.id,
-        ...form,
-        onboarding_completed: true,
+        id: user.id, ...form, onboarding_completed: true,
       });
       if (error) throw error;
       await refreshProfile();
@@ -59,169 +54,126 @@ function ProfileScreen() {
   }
 
   const isComplete = profile?.onboarding_completed;
+  const initials = form.username ? form.username[0].toUpperCase() : "?";
 
   return (
-    <div style={styles.page}>
-      {/* Header */}
-      <div style={styles.header}>
-        <div style={styles.avatar}>
-          {form.username ? form.username[0].toUpperCase() : "?"}
+    <div className="min-h-screen bg-base px-5 pt-8 pb-24 flex flex-col gap-4">
+
+      {/* Header card */}
+      <div className="bg-elevated border border-border rounded-2xl p-5 flex items-center gap-4">
+        <div className="w-14 h-14 rounded-full bg-teal flex items-center justify-center text-[22px] font-bold font-body text-base flex-shrink-0">
+          {initials}
         </div>
         <div>
-          <h1 style={styles.name}>{profile?.username || "Your Profile"}</h1>
-          <p style={styles.email}>{user?.email}</p>
+          <h1 className="font-body font-bold text-[20px] text-text-primary">{profile?.username || "Your Profile"}</h1>
+          <p className="font-body text-[13px] text-text-secondary">{user?.email}</p>
         </div>
       </div>
 
       {/* Incomplete banner */}
       {!isComplete && !editing && (
-        <div style={styles.banner}>
+        <div className="bg-teal/10 border border-teal/20 rounded-2xl px-5 py-4 flex justify-between items-center gap-3">
           <div>
-            <div style={styles.bannerTitle}>🎯 Complete your profile</div>
-            <div style={styles.bannerSub}>
-              Help us personalise your experience
-            </div>
+            <p className="font-body font-bold text-[15px] text-text-primary mb-0.5">🎯 Complete your profile</p>
+            <p className="font-body text-[13px] text-text-secondary">Help us personalise your experience</p>
           </div>
-          <button style={styles.bannerButton} onClick={() => setEditing(true)}>
+          <button onClick={() => setEditing(true)}
+            className="bg-teal text-base border-none rounded-xl px-4 py-2.5 font-body font-bold text-[14px] cursor-pointer whitespace-nowrap">
             Set up →
           </button>
         </div>
       )}
 
       {saved && (
-        <div style={styles.successBanner}>✅ Profile saved successfully!</div>
+        <div className="bg-success-bg border border-success/30 rounded-xl px-4 py-3 font-body text-[14px] font-semibold text-success">
+          ✅ Profile saved successfully!
+        </div>
       )}
 
-      {/* Profile info / edit form */}
-      <div style={styles.section}>
-        <div style={styles.sectionHeader}>
-          <h2 style={styles.sectionTitle}>My Profile</h2>
+      {/* Profile section */}
+      <div className="bg-elevated border border-border rounded-2xl p-5 flex flex-col gap-4">
+        <div className="flex justify-between items-center">
+          <h2 className="font-body font-bold text-[17px] text-text-primary">My Profile</h2>
           {!editing && (
-            <button style={styles.editButton} onClick={() => setEditing(true)}>
+            <button onClick={() => setEditing(true)}
+              className="bg-transparent border border-teal text-teal rounded-lg px-4 py-1.5 font-body font-semibold text-[13px] cursor-pointer">
               Edit
             </button>
           )}
         </div>
 
         {/* Username */}
-        <div style={styles.field}>
-          <label style={styles.label}>Username</label>
+        <Field label="Username">
           {editing ? (
-            <input
-              style={styles.input}
-              value={form.username}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, username: e.target.value }))
-              }
-              maxLength={30}
-              placeholder="Enter username"
-            />
+            <input value={form.username} maxLength={30} placeholder="Enter username"
+              onChange={(e) => setForm((p) => ({ ...p, username: e.target.value }))}
+              className="w-full px-4 py-3 rounded-xl border border-border bg-card text-text-primary text-[15px] font-body outline-none focus:border-teal transition-colors" />
           ) : (
-            <p style={styles.value}>{profile?.username || "—"}</p>
+            <p className="font-body text-[15px] text-text-primary font-medium">{profile?.username || "—"}</p>
           )}
-        </div>
+        </Field>
 
         {/* Level */}
-        <div style={styles.field}>
-          <label style={styles.label}>English Level</label>
+        <Field label="English Level">
           {editing ? (
-            <div style={styles.chipRow}>
+            <div className="flex flex-wrap gap-2">
               {LEVELS.map((l) => (
-                <button
-                  key={l.value}
-                  style={
-                    form.self_assessed_level === l.value
-                      ? styles.chipActive
-                      : styles.chip
-                  }
-                  onClick={() =>
-                    setForm((prev) => ({
-                      ...prev,
-                      self_assessed_level: l.value,
-                    }))
-                  }
-                >
+                <Chip key={l.value} active={form.self_assessed_level === l.value}
+                  onClick={() => setForm((p) => ({ ...p, self_assessed_level: l.value }))}>
                   {l.label}
-                </button>
+                </Chip>
               ))}
             </div>
           ) : (
-            <p style={styles.value}>
-              {LEVELS.find((l) => l.value === profile?.self_assessed_level)
-                ?.label || "—"}
+            <p className="font-body text-[15px] text-text-primary font-medium">
+              {LEVELS.find((l) => l.value === profile?.self_assessed_level)?.label || "—"}
             </p>
           )}
-        </div>
+        </Field>
 
         {/* Target exams */}
-        <div style={styles.field}>
-          <label style={styles.label}>Target Exams</label>
+        <Field label="Target Exams">
           {editing ? (
-            <div style={styles.chipRow}>
+            <div className="flex flex-wrap gap-2">
               {EXAMS.map((exam) => (
-                <button
-                  key={exam}
-                  style={
-                    form.target_exams.includes(exam)
-                      ? styles.chipActive
-                      : styles.chip
-                  }
-                  onClick={() => toggleExam(exam)}
-                >
+                <Chip key={exam} active={form.target_exams.includes(exam)} onClick={() => toggleExam(exam)}>
                   {exam}
-                </button>
+                </Chip>
               ))}
             </div>
           ) : (
-            <p style={styles.value}>
-              {profile?.target_exams?.length > 0
-                ? profile.target_exams.join(", ")
-                : "—"}
+            <p className="font-body text-[15px] text-text-primary font-medium">
+              {profile?.target_exams?.length > 0 ? profile.target_exams.join(", ") : "—"}
             </p>
           )}
-        </div>
+        </Field>
 
         {/* Daily goal */}
-        <div style={styles.field}>
-          <label style={styles.label}>Daily Goal</label>
+        <Field label="Daily Goal">
           {editing ? (
-            <div style={styles.chipRow}>
+            <div className="flex flex-wrap gap-2">
               {GOALS.map((g) => (
-                <button
-                  key={g}
-                  style={
-                    form.daily_goal === g ? styles.chipActive : styles.chip
-                  }
-                  onClick={() =>
-                    setForm((prev) => ({ ...prev, daily_goal: g }))
-                  }
-                >
+                <Chip key={g} active={form.daily_goal === g}
+                  onClick={() => setForm((p) => ({ ...p, daily_goal: g }))}>
                   {g} questions
-                </button>
+                </Chip>
               ))}
             </div>
           ) : (
-            <p style={styles.value}>
-              {profile?.daily_goal
-                ? `${profile.daily_goal} questions/day`
-                : "—"}
+            <p className="font-body text-[15px] text-text-primary font-medium">
+              {profile?.daily_goal ? `${profile.daily_goal} questions/day` : "—"}
             </p>
           )}
-        </div>
+        </Field>
 
         {editing && (
-          <div style={styles.editActions}>
-            <button
-              style={styles.cancelButton}
-              onClick={() => setEditing(false)}
-            >
+          <div className="flex gap-2.5 mt-1">
+            <button onClick={() => setEditing(false)}
+              className="flex-1 py-3 bg-transparent border border-border text-text-secondary rounded-xl font-body font-semibold text-[14px] cursor-pointer">
               Cancel
             </button>
-            <button
-              style={{ ...styles.saveButton, opacity: saving ? 0.6 : 1 }}
-              onClick={handleSave}
-              disabled={saving}
-            >
+            <button onClick={handleSave} disabled={saving}
+              className={`flex-[2] py-3 bg-teal text-base border-none rounded-xl font-body font-bold text-[14px] cursor-pointer transition-opacity ${saving ? "opacity-60" : "opacity-100"}`}>
               {saving ? "Saving..." : "Save Profile"}
             </button>
           </div>
@@ -229,8 +181,9 @@ function ProfileScreen() {
       </div>
 
       {/* Sign out */}
-      <div style={styles.section}>
-        <button style={styles.signOutButton} onClick={signOut}>
+      <div className="bg-elevated border border-border rounded-2xl p-4">
+        <button onClick={signOut}
+          className="w-full py-3.5 bg-transparent border border-danger/40 text-danger rounded-xl font-body font-semibold text-[15px] cursor-pointer hover:bg-danger-bg transition-colors">
           Sign Out
         </button>
       </div>
@@ -238,220 +191,26 @@ function ProfileScreen() {
   );
 }
 
-const styles = {
-  page: {
-    minHeight: "100vh",
-    backgroundColor: colors.offWhite,
-    padding: "24px 20px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "20px",
-  },
-  header: {
-    display: "flex",
-    alignItems: "center",
-    gap: "16px",
-    backgroundColor: colors.white,
-    borderRadius: "16px",
-    padding: "20px",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-  },
-  avatar: {
-    width: "56px",
-    height: "56px",
-    borderRadius: "50%",
-    backgroundColor: colors.teal,
-    color: colors.white,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "22px",
-    fontWeight: "700",
-    fontFamily: fonts.body,
-    flexShrink: 0,
-  },
-  name: {
-    fontFamily: fonts.body,
-    fontWeight: "700",
-    fontSize: "20px",
-    color: colors.navy,
-    marginBottom: "2px",
-  },
-  email: {
-    fontFamily: fonts.body,
-    fontSize: "13px",
-    color: colors.gray500,
-  },
-  banner: {
-    backgroundColor: colors.navy,
-    borderRadius: "14px",
-    padding: "16px 20px",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: "12px",
-  },
-  bannerTitle: {
-    fontFamily: fonts.body,
-    fontWeight: "700",
-    fontSize: "15px",
-    color: colors.white,
-    marginBottom: "2px",
-  },
-  bannerSub: {
-    fontFamily: fonts.body,
-    fontSize: "13px",
-    color: colors.gray300,
-  },
-  bannerButton: {
-    backgroundColor: colors.teal,
-    color: colors.navy,
-    border: "none",
-    borderRadius: "10px",
-    padding: "10px 16px",
-    fontFamily: fonts.body,
-    fontWeight: "700",
-    fontSize: "14px",
-    cursor: "pointer",
-    whiteSpace: "nowrap",
-  },
-  successBanner: {
-    backgroundColor: "#e6faf5",
-    color: colors.success,
-    border: `1px solid ${colors.success}`,
-    borderRadius: "12px",
-    padding: "12px 16px",
-    fontFamily: fonts.body,
-    fontSize: "14px",
-    fontWeight: "600",
-  },
-  section: {
-    backgroundColor: colors.white,
-    borderRadius: "16px",
-    padding: "20px",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-    display: "flex",
-    flexDirection: "column",
-    gap: "16px",
-  },
-  sectionHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  sectionTitle: {
-    fontFamily: fonts.body,
-    fontWeight: "700",
-    fontSize: "17px",
-    color: colors.navy,
-  },
-  editButton: {
-    backgroundColor: "transparent",
-    border: `1.5px solid ${colors.teal}`,
-    color: colors.teal,
-    borderRadius: "8px",
-    padding: "6px 14px",
-    fontFamily: fonts.body,
-    fontWeight: "600",
-    fontSize: "13px",
-    cursor: "pointer",
-  },
-  field: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-  },
-  label: {
-    fontFamily: fonts.body,
-    fontWeight: "600",
-    fontSize: "13px",
-    color: colors.gray500,
-    textTransform: "uppercase",
-    letterSpacing: "0.5px",
-  },
-  value: {
-    fontFamily: fonts.body,
-    fontSize: "15px",
-    color: colors.navy,
-    fontWeight: "500",
-  },
-  input: {
-    padding: "12px 14px",
-    borderRadius: "10px",
-    border: `2px solid ${colors.gray100}`,
-    fontSize: "15px",
-    fontFamily: fonts.body,
-    color: colors.navy,
-    outline: "none",
-  },
-  chipRow: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "8px",
-  },
-  chip: {
-    padding: "8px 14px",
-    borderRadius: "100px",
-    border: `1.5px solid ${colors.gray100}`,
-    backgroundColor: "transparent",
-    color: colors.gray700,
-    fontFamily: fonts.body,
-    fontWeight: "500",
-    fontSize: "13px",
-    cursor: "pointer",
-  },
-  chipActive: {
-    padding: "8px 14px",
-    borderRadius: "100px",
-    border: `1.5px solid ${colors.teal}`,
-    backgroundColor: colors.tealLight,
-    color: colors.teal,
-    fontFamily: fonts.body,
-    fontWeight: "700",
-    fontSize: "13px",
-    cursor: "pointer",
-  },
-  editActions: {
-    display: "flex",
-    gap: "10px",
-    marginTop: "4px",
-  },
-  cancelButton: {
-    flex: 1,
-    padding: "12px",
-    backgroundColor: "transparent",
-    border: `1.5px solid ${colors.gray100}`,
-    borderRadius: "10px",
-    fontFamily: fonts.body,
-    fontWeight: "600",
-    fontSize: "14px",
-    color: colors.gray500,
-    cursor: "pointer",
-  },
-  saveButton: {
-    flex: 2,
-    padding: "12px",
-    backgroundColor: colors.teal,
-    border: "none",
-    borderRadius: "10px",
-    fontFamily: fonts.body,
-    fontWeight: "700",
-    fontSize: "14px",
-    color: colors.navy,
-    cursor: "pointer",
-  },
-  signOutButton: {
-    padding: "14px",
-    backgroundColor: "transparent",
-    border: `1.5px solid ${colors.danger}`,
-    borderRadius: "12px",
-    color: colors.danger,
-    fontFamily: fonts.body,
-    fontWeight: "600",
-    fontSize: "15px",
-    cursor: "pointer",
-    width: "100%",
-  },
-};
+function Field({ label, children }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <label className="font-body font-semibold text-[12px] text-text-tertiary uppercase tracking-wider">{label}</label>
+      {children}
+    </div>
+  );
+}
+
+function Chip({ active, onClick, children }) {
+  return (
+    <button onClick={onClick}
+      className={`px-3.5 py-2 rounded-full border font-body font-medium text-[13px] cursor-pointer transition-all duration-150 ${
+        active
+          ? "border-teal bg-teal/10 text-teal font-semibold"
+          : "border-border bg-transparent text-text-secondary hover:border-border-strong"
+      }`}>
+      {children}
+    </button>
+  );
+}
 
 export default ProfileScreen;

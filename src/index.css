@@ -1,27 +1,43 @@
-/* src/index.css */
-*, *::before, *::after {
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
 }
 
-body {
-  font-family: 'DM Sans', sans-serif;
-  background-color: #f4f7fb;
-  color: #0d1b2a;
+html,
+body,
+#root {
+  height: 100%;
+  background-color: #0e1a2b;
+  color: #e8f0f7;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-family: "DM Sans", sans-serif;
 }
 
-button {
-  font-family: 'DM Sans', sans-serif;
-  cursor: pointer;
-  transition: all 0.18s ease;
+input,
+button,
+textarea,
+select {
+  font-family: inherit;
 }
 
-button:hover {
-  transform: translateY(-1px);
+::-webkit-scrollbar {
+  width: 5px;
 }
-
-button:active {
-  transform: translateY(0px);
+::-webkit-scrollbar-track {
+  background: #0e1a2b;
+}
+::-webkit-scrollbar-thumb {
+  background: #1f3347;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2a4460;
 }

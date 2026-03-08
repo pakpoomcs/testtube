@@ -1,14 +1,8 @@
 // src/pages/AdminPage.js
-// Admin-only page to manage exams and questions.
-// Only accessible to users with is_admin = true in their profile.
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { useAuth } from "../context/AuthContext";
-import { theme } from "../styles/theme";
-
-const { colors, fonts } = theme;
 
 function AdminPage() {
   const { isAdmin } = useAuth();
@@ -20,38 +14,20 @@ function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
-  const [activeTab, setActiveTab] = useState("questions"); // 'questions' | 'addQuestion' | 'addExam'
+  const [activeTab, setActiveTab] = useState("questions");
 
-  // New question form state
   const [form, setForm] = useState({
-    question_text: "",
-    option_a: "",
-    option_b: "",
-    option_c: "",
-    option_d: "",
-    correct_option: "a",
-    explanation: "",
-    topic: "",
-    difficulty: "Medium",
-    is_premium: false,
+    question_text: "", option_a: "", option_b: "", option_c: "", option_d: "",
+    correct_option: "a", explanation: "", topic: "", difficulty: "Medium", is_premium: false,
   });
 
-  // New exam form state
   const [examForm, setExamForm] = useState({
-    name: "",
-    name_th: "",
-    description: "",
-    description_th: "",
-    category: "English",
-    difficulty: "Intermediate",
-    is_premium: false,
+    name: "", name_th: "", description: "", description_th: "",
+    category: "English", difficulty: "Intermediate", is_premium: false,
   });
 
   useEffect(() => {
-    if (!isAdmin) {
-      navigate("/");
-      return;
-    }
+    if (!isAdmin) { navigate("/"); return; }
     fetchExams();
   }, [isAdmin, navigate]);
 
@@ -61,532 +37,290 @@ function AdminPage() {
 
   async function fetchExams() {
     try {
-      const { data, error } = await supabase
-        .from("exams")
-        .select("*")
-        .order("name");
+      const { data, error } = await supabase.from("exams").select("*").order("name");
       if (error) throw error;
       setExams(data);
       if (data.length > 0) setSelectedExam(data[0]);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
   }
 
   async function fetchQuestions(examId) {
     try {
-      const { data, error } = await supabase
-        .from("questions")
-        .select("*")
-        .eq("exam_id", examId)
-        .order("created_at");
+      const { data, error } = await supabase.from("questions").select("*").eq("exam_id", examId).order("created_at");
       if (error) throw error;
       setQuestions(data);
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   }
 
   async function handleAddQuestion() {
     if (!selectedExam) return;
-    if (
-      !form.question_text ||
-      !form.option_a ||
-      !form.option_b ||
-      !form.option_c ||
-      !form.option_d ||
-      !form.explanation ||
-      !form.topic
-    ) {
-      setMessage({ type: "error", text: "Please fill in all fields." });
-      return;
+    if (!form.question_text || !form.explanation || !form.topic) {
+      setMessage({ type: "error", text: "Please fill in all required fields." }); return;
     }
-
-    setSaving(true);
-    setMessage(null);
-
+    setSaving(true); setMessage(null);
     try {
-      const { error } = await supabase.from("questions").insert({
-        exam_id: selectedExam.id,
-        ...form,
-      });
+      const { error } = await supabase.from("questions").insert({ exam_id: selectedExam.id, ...form });
       if (error) throw error;
-
       setMessage({ type: "success", text: "Question added successfully!" });
-      setForm({
-        question_text: "",
-        option_a: "",
-        option_b: "",
-        option_c: "",
-        option_d: "",
-        correct_option: "a",
-        explanation: "",
-        topic: "",
-        difficulty: "Medium",
-        is_premium: false,
-      });
+      setForm({ question_text: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_option: "a", explanation: "", topic: "", difficulty: "Medium", is_premium: false });
       fetchQuestions(selectedExam.id);
       setActiveTab("questions");
-    } catch (err) {
-      setMessage({ type: "error", text: err.message });
-    } finally {
-      setSaving(false);
-    }
+    } catch (err) { setMessage({ type: "error", text: err.message }); }
+    finally { setSaving(false); }
   }
 
   async function handleDeleteQuestion(questionId) {
     if (!window.confirm("Delete this question? This cannot be undone.")) return;
-
     try {
-      const { error } = await supabase
-        .from("questions")
-        .delete()
-        .eq("id", questionId);
+      const { error } = await supabase.from("questions").delete().eq("id", questionId);
       if (error) throw error;
       fetchQuestions(selectedExam.id);
-    } catch (err) {
-      setMessage({ type: "error", text: err.message });
-    }
+    } catch (err) { setMessage({ type: "error", text: err.message }); }
   }
 
   async function handleAddExam() {
     if (!examForm.name || !examForm.description || !examForm.category) {
-      setMessage({
-        type: "error",
-        text: "Please fill in all required fields.",
-      });
-      return;
+      setMessage({ type: "error", text: "Please fill in all required fields." }); return;
     }
-
-    setSaving(true);
-    setMessage(null);
-
+    setSaving(true); setMessage(null);
     try {
       const { error } = await supabase.from("exams").insert(examForm);
       if (error) throw error;
-
       setMessage({ type: "success", text: `${examForm.name} exam added!` });
-      setExamForm({
-        name: "",
-        name_th: "",
-        description: "",
-        description_th: "",
-        category: "English",
-        difficulty: "Intermediate",
-        is_premium: false,
-      });
-      fetchExams();
-      setActiveTab("questions");
-    } catch (err) {
-      setMessage({ type: "error", text: err.message });
-    } finally {
-      setSaving(false);
-    }
+      setExamForm({ name: "", name_th: "", description: "", description_th: "", category: "English", difficulty: "Intermediate", is_premium: false });
+      fetchExams(); setActiveTab("questions");
+    } catch (err) { setMessage({ type: "error", text: err.message }); }
+    finally { setSaving(false); }
   }
 
-  function updateForm(field, value) {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  }
+  const updateForm = (f, v) => setForm((p) => ({ ...p, [f]: v }));
+  const updateExamForm = (f, v) => setExamForm((p) => ({ ...p, [f]: v }));
 
-  function updateExamForm(field, value) {
-    setExamForm((prev) => ({ ...prev, [field]: value }));
-  }
-
-  if (loading)
-    return (
-      <div style={styles.loadingScreen}>
-        <p style={styles.loadingText}>Loading admin panel...</p>
-      </div>
-    );
+  if (loading) return (
+    <div className="min-h-screen bg-base flex items-center justify-center">
+      <p className="font-body text-text-secondary">Loading admin panel...</p>
+    </div>
+  );
 
   return (
-    <div style={styles.page}>
-      <div style={styles.content}>
-        {/* ── Page title ── */}
-        <div style={styles.pageHeader}>
-          <h1 style={styles.pageTitle}>Admin Panel</h1>
-          <p style={styles.pageSub}>Manage exams and questions</p>
+    <div className="min-h-screen bg-base">
+      <div className="max-w-[1100px] mx-auto px-6 py-10 pb-24 flex flex-col gap-6">
+
+        {/* Header */}
+        <div>
+          <h1 className="font-heading text-[40px] text-text-primary tracking-wide leading-none">Admin Panel</h1>
+          <p className="font-body text-[14px] text-text-secondary mt-1">Manage exams and questions</p>
         </div>
 
-        {/* ── Message ── */}
+        {/* Message */}
         {message && (
-          <div
-            style={
-              message.type === "success" ? styles.successBox : styles.errorBox
-            }
-          >
+          <div className={`px-4 py-3 rounded-xl text-[14px] font-body border ${
+            message.type === "success"
+              ? "bg-success-bg border-success/30 text-success"
+              : "bg-danger-bg border-danger/30 text-danger"
+          }`}>
             {message.text}
           </div>
         )}
 
-        <div style={styles.layout}>
-          {/* ── Left sidebar: exam selector ── */}
-          <div style={styles.sidebar}>
-            <p style={styles.sidebarTitle}>Exams</p>
+        <div className="grid gap-6" style={{ gridTemplateColumns: "200px 1fr" }}>
+
+          {/* Sidebar */}
+          <div className="bg-elevated border border-border rounded-2xl p-4 flex flex-col gap-1.5 self-start">
+            <p className="font-body font-bold text-[11px] text-text-tertiary uppercase tracking-widest px-2 mb-1">Exams</p>
             {exams.map((exam) => (
-              <button
-                key={exam.id}
-                style={
+              <button key={exam.id}
+                onClick={() => { setSelectedExam(exam); setActiveTab("questions"); setMessage(null); }}
+                className={`w-full text-left px-3 py-2.5 rounded-xl border-none cursor-pointer flex flex-col gap-0.5 transition-colors ${
                   selectedExam?.id === exam.id
-                    ? styles.examButtonActive
-                    : styles.examButton
-                }
-                onClick={() => {
-                  setSelectedExam(exam);
-                  setActiveTab("questions");
-                  setMessage(null);
-                }}
-              >
+                    ? "bg-teal/10 text-teal font-bold"
+                    : "bg-transparent text-text-primary hover:bg-card"
+                } font-body text-[14px]`}>
                 <span>{exam.name}</span>
-                <span style={styles.examButtonSub}>{exam.category}</span>
+                <span className="text-[11px] text-text-tertiary font-normal">{exam.category}</span>
               </button>
             ))}
-            <button
-              style={styles.addExamButton}
-              onClick={() => {
-                setActiveTab("addExam");
-                setMessage(null);
-              }}
-            >
+            <button onClick={() => { setActiveTab("addExam"); setMessage(null); }}
+              className="mt-2 bg-transparent border border-dashed border-border text-text-tertiary px-3 py-2.5 rounded-xl font-body text-[13px] cursor-pointer hover:border-border-strong transition-colors text-left">
               + Add New Exam
             </button>
           </div>
 
-          {/* ── Main content ── */}
-          <div style={styles.main}>
-            {/* Tab bar */}
+          {/* Main */}
+          <div className="flex flex-col gap-4">
+
+            {/* Tabs */}
             {activeTab !== "addExam" && (
-              <div style={styles.tabBar}>
-                <button
-                  style={
-                    activeTab === "questions" ? styles.tabActive : styles.tab
-                  }
-                  onClick={() => setActiveTab("questions")}
-                >
-                  Questions ({questions.length})
-                </button>
-                <button
-                  style={
-                    activeTab === "addQuestion" ? styles.tabActive : styles.tab
-                  }
-                  onClick={() => setActiveTab("addQuestion")}
-                >
-                  + Add Question
-                </button>
+              <div className="flex gap-2">
+                {[["questions", `Questions (${questions.length})`], ["addQuestion", "+ Add Question"]].map(([tab, label]) => (
+                  <button key={tab} onClick={() => setActiveTab(tab)}
+                    className={`px-5 py-2 rounded-full font-body font-medium text-[13px] cursor-pointer border transition-all ${
+                      activeTab === tab
+                        ? "bg-teal text-base border-teal font-semibold"
+                        : "bg-transparent text-text-secondary border-border hover:border-border-strong"
+                    }`}>
+                    {label}
+                  </button>
+                ))}
               </div>
             )}
 
-            {/* ── Questions list ── */}
+            {/* Questions list */}
             {activeTab === "questions" && (
-              <div style={styles.questionList}>
+              <div className="flex flex-col gap-3">
                 {questions.length === 0 ? (
-                  <div style={styles.emptyState}>
-                    <p style={styles.emptyText}>
-                      No questions yet for {selectedExam?.name}.
-                    </p>
-                    <button
-                      style={styles.primaryButton}
-                      onClick={() => setActiveTab("addQuestion")}
-                    >
+                  <div className="bg-elevated border border-border rounded-2xl p-16 flex flex-col items-center gap-4 text-center">
+                    <p className="font-body text-[15px] text-text-secondary">No questions yet for {selectedExam?.name}.</p>
+                    <button onClick={() => setActiveTab("addQuestion")}
+                      className="px-6 py-3 bg-teal text-base rounded-xl font-body font-semibold text-[14px] border-none cursor-pointer">
                       Add First Question
                     </button>
                   </div>
-                ) : (
-                  questions.map((q, i) => (
-                    <div key={q.id} style={styles.questionCard}>
-                      <div style={styles.questionCardHeader}>
-                        <span style={styles.questionNumber}>Q{i + 1}</span>
-                        <div style={styles.questionTags}>
-                          <span style={styles.tag}>{q.topic}</span>
-                          <span style={styles.tag}>{q.difficulty}</span>
-                          {q.is_premium && (
-                            <span style={styles.tagPremium}>Premium</span>
-                          )}
-                        </div>
-                        <button
-                          style={styles.deleteButton}
-                          onClick={() => handleDeleteQuestion(q.id)}
-                        >
-                          Delete
-                        </button>
+                ) : questions.map((q, i) => (
+                  <div key={q.id} className="bg-elevated border border-border rounded-xl p-5 flex flex-col gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <span className="font-heading text-[18px] text-teal min-w-[32px]">Q{i + 1}</span>
+                      <div className="flex gap-1.5 flex-grow flex-wrap">
+                        <span className="bg-card border border-border text-text-secondary text-[11px] font-semibold px-2.5 py-0.5 rounded-full font-body">{q.topic}</span>
+                        <span className="bg-card border border-border text-text-secondary text-[11px] font-semibold px-2.5 py-0.5 rounded-full font-body">{q.difficulty}</span>
+                        {q.is_premium && <span className="bg-warning-bg border border-warning/20 text-warning text-[11px] font-semibold px-2.5 py-0.5 rounded-full font-body">Premium</span>}
                       </div>
-                      <p style={styles.questionText}>{q.question_text}</p>
-                      <div style={styles.optionGrid}>
-                        {["a", "b", "c", "d"].map((key) => (
-                          <p
-                            key={key}
-                            style={{
-                              ...styles.optionText,
-                              color:
-                                key === q.correct_option
-                                  ? colors.success
-                                  : colors.gray700,
-                              fontWeight:
-                                key === q.correct_option ? "700" : "400",
-                            }}
-                          >
-                            {key.toUpperCase()}. {q[`option_${key}`]}
-                            {key === q.correct_option && " ✓"}
-                          </p>
-                        ))}
-                      </div>
-                      <p style={styles.explanation}>💡 {q.explanation}</p>
+                      <button onClick={() => handleDeleteQuestion(q.id)}
+                        className="bg-transparent border border-danger/40 text-danger px-3 py-1 rounded-lg text-[12px] font-body cursor-pointer hover:bg-danger-bg transition-colors">
+                        Delete
+                      </button>
                     </div>
-                  ))
-                )}
+                    <p className="font-body font-semibold text-[15px] text-text-primary leading-relaxed">{q.question_text}</p>
+                    <div className="grid grid-cols-2 gap-1">
+                      {["a", "b", "c", "d"].map((key) => (
+                        <p key={key} className={`font-body text-[13px] leading-relaxed ${key === q.correct_option ? "text-success font-bold" : "text-text-secondary"}`}>
+                          {key.toUpperCase()}. {q[`option_${key}`]}{key === q.correct_option && " ✓"}
+                        </p>
+                      ))}
+                    </div>
+                    <p className="font-body text-[13px] text-text-tertiary leading-relaxed pt-3 border-t border-border">💡 {q.explanation}</p>
+                  </div>
+                ))}
               </div>
             )}
 
-            {/* ── Add question form ── */}
+            {/* Add question form */}
             {activeTab === "addQuestion" && (
-              <div style={styles.formCard}>
-                <h2 style={styles.formTitle}>
-                  Add Question to {selectedExam?.name}
-                </h2>
+              <div className="bg-elevated border border-border rounded-2xl p-7 flex flex-col gap-4">
+                <h2 className="font-body font-bold text-[18px] text-text-primary">Add Question to {selectedExam?.name}</h2>
 
-                <div style={styles.fieldGroup}>
-                  <label style={styles.label}>Question *</label>
-                  <textarea
-                    style={styles.textarea}
-                    placeholder="Enter the question text..."
-                    value={form.question_text}
-                    onChange={(e) =>
-                      updateForm("question_text", e.target.value)
-                    }
-                    rows={3}
-                  />
-                </div>
+                <FormField label="Question *">
+                  <textarea rows={3} placeholder="Enter the question text..."
+                    value={form.question_text} onChange={(e) => updateForm("question_text", e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-border bg-card text-text-primary text-[14px] font-body outline-none focus:border-teal transition-colors resize-y" />
+                </FormField>
 
                 {["a", "b", "c", "d"].map((key) => (
-                  <div key={key} style={styles.fieldGroup}>
-                    <label style={styles.label}>
-                      Option {key.toUpperCase()} *
-                    </label>
-                    <input
-                      style={styles.input}
-                      placeholder={`Option ${key.toUpperCase()}`}
-                      value={form[`option_${key}`]}
-                      onChange={(e) =>
-                        updateForm(`option_${key}`, e.target.value)
-                      }
-                    />
-                  </div>
+                  <FormField key={key} label={`Option ${key.toUpperCase()} *`}>
+                    <input placeholder={`Option ${key.toUpperCase()}`} value={form[`option_${key}`]}
+                      onChange={(e) => updateForm(`option_${key}`, e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl border border-border bg-card text-text-primary text-[14px] font-body outline-none focus:border-teal transition-colors" />
+                  </FormField>
                 ))}
 
-                <div style={styles.rowGroup}>
-                  <div style={{ ...styles.fieldGroup, flex: 1 }}>
-                    <label style={styles.label}>Correct Answer *</label>
-                    <select
-                      style={styles.select}
-                      value={form.correct_option}
-                      onChange={(e) =>
-                        updateForm("correct_option", e.target.value)
-                      }
-                    >
-                      {["a", "b", "c", "d"].map((k) => (
-                        <option key={k} value={k}>
-                          {k.toUpperCase()}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div style={{ ...styles.fieldGroup, flex: 1 }}>
-                    <label style={styles.label}>Difficulty *</label>
-                    <select
-                      style={styles.select}
-                      value={form.difficulty}
-                      onChange={(e) => updateForm("difficulty", e.target.value)}
-                    >
-                      {["Easy", "Medium", "Hard"].map((d) => (
-                        <option key={d} value={d}>
-                          {d}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div style={{ ...styles.fieldGroup, flex: 1 }}>
-                    <label style={styles.label}>Topic *</label>
-                    <input
-                      style={styles.input}
-                      placeholder="e.g. Grammar"
-                      value={form.topic}
-                      onChange={(e) => updateForm("topic", e.target.value)}
-                    />
+                <div className="flex gap-4 flex-wrap">
+                  {[
+                    { label: "Correct Answer *", field: "correct_option", options: ["a","b","c","d"].map(k => ({ value: k, label: k.toUpperCase() })) },
+                    { label: "Difficulty *", field: "difficulty", options: ["Easy","Medium","Hard"].map(d => ({ value: d, label: d })) },
+                  ].map(({ label, field, options }) => (
+                    <div key={field} className="flex flex-col gap-1.5 flex-1 min-w-[120px]">
+                      <label className="font-body font-semibold text-[13px] text-text-secondary">{label}</label>
+                      <select value={form[field]} onChange={(e) => updateForm(field, e.target.value)}
+                        className="px-4 py-3 rounded-xl border border-border bg-card text-text-primary text-[14px] font-body outline-none focus:border-teal transition-colors">
+                        {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                      </select>
+                    </div>
+                  ))}
+                  <div className="flex flex-col gap-1.5 flex-1 min-w-[120px]">
+                    <label className="font-body font-semibold text-[13px] text-text-secondary">Topic *</label>
+                    <input placeholder="e.g. Grammar" value={form.topic} onChange={(e) => updateForm("topic", e.target.value)}
+                      className="px-4 py-3 rounded-xl border border-border bg-card text-text-primary text-[14px] font-body outline-none focus:border-teal transition-colors" />
                   </div>
                 </div>
 
-                <div style={styles.fieldGroup}>
-                  <label style={styles.label}>Explanation *</label>
-                  <textarea
-                    style={styles.textarea}
-                    placeholder="Explain why the correct answer is right..."
-                    value={form.explanation}
-                    onChange={(e) => updateForm("explanation", e.target.value)}
-                    rows={3}
-                  />
-                </div>
+                <FormField label="Explanation *">
+                  <textarea rows={3} placeholder="Explain why the correct answer is right..."
+                    value={form.explanation} onChange={(e) => updateForm("explanation", e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-border bg-card text-text-primary text-[14px] font-body outline-none focus:border-teal transition-colors resize-y" />
+                </FormField>
 
-                <div style={styles.checkboxRow}>
-                  <input
-                    type="checkbox"
-                    id="is_premium"
-                    checked={form.is_premium}
-                    onChange={(e) => updateForm("is_premium", e.target.checked)}
-                  />
-                  <label htmlFor="is_premium" style={styles.checkboxLabel}>
-                    Premium question (requires subscription)
-                  </label>
-                </div>
+                <label className="flex items-center gap-2.5 cursor-pointer">
+                  <input type="checkbox" checked={form.is_premium} onChange={(e) => updateForm("is_premium", e.target.checked)} className="w-4 h-4" />
+                  <span className="font-body text-[14px] text-text-secondary">Premium question (requires subscription)</span>
+                </label>
 
-                <div style={styles.formButtons}>
-                  <button
-                    style={styles.secondaryButton}
-                    onClick={() => setActiveTab("questions")}
-                  >
+                <div className="flex gap-3 justify-end mt-2">
+                  <button onClick={() => setActiveTab("questions")}
+                    className="px-6 py-3 bg-transparent border border-border text-text-secondary rounded-xl font-body font-semibold text-[14px] cursor-pointer hover:border-border-strong transition-colors">
                     Cancel
                   </button>
-                  <button
-                    style={{
-                      ...styles.primaryButton,
-                      opacity: saving ? 0.6 : 1,
-                    }}
-                    onClick={handleAddQuestion}
-                    disabled={saving}
-                  >
+                  <button onClick={handleAddQuestion} disabled={saving}
+                    className={`px-6 py-3 bg-teal text-base border-none rounded-xl font-body font-semibold text-[14px] cursor-pointer transition-opacity ${saving ? "opacity-60" : "opacity-100"}`}>
                     {saving ? "Saving..." : "Save Question"}
                   </button>
                 </div>
               </div>
             )}
 
-            {/* ── Add exam form ── */}
+            {/* Add exam form */}
             {activeTab === "addExam" && (
-              <div style={styles.formCard}>
-                <h2 style={styles.formTitle}>Add New Exam</h2>
+              <div className="bg-elevated border border-border rounded-2xl p-7 flex flex-col gap-4">
+                <h2 className="font-body font-bold text-[18px] text-text-primary">Add New Exam</h2>
 
-                <div style={styles.rowGroup}>
-                  <div style={{ ...styles.fieldGroup, flex: 1 }}>
-                    <label style={styles.label}>Exam Name * (e.g. IELTS)</label>
-                    <input
-                      style={styles.input}
-                      placeholder="e.g. IELTS"
-                      value={examForm.name}
-                      onChange={(e) => updateExamForm("name", e.target.value)}
-                    />
-                  </div>
-                  <div style={{ ...styles.fieldGroup, flex: 1 }}>
-                    <label style={styles.label}>Thai Name</label>
-                    <input
-                      style={styles.input}
-                      placeholder="e.g. ไอเอลทีเอส"
-                      value={examForm.name_th}
-                      onChange={(e) =>
-                        updateExamForm("name_th", e.target.value)
-                      }
-                    />
-                  </div>
+                <div className="flex gap-4 flex-wrap">
+                  <FormField label="Exam Name * (e.g. IELTS)" className="flex-1 min-w-[140px]">
+                    <input placeholder="e.g. IELTS" value={examForm.name} onChange={(e) => updateExamForm("name", e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl border border-border bg-card text-text-primary text-[14px] font-body outline-none focus:border-teal transition-colors" />
+                  </FormField>
+                  <FormField label="Thai Name" className="flex-1 min-w-[140px]">
+                    <input placeholder="e.g. ไอเอลทีเอส" value={examForm.name_th} onChange={(e) => updateExamForm("name_th", e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl border border-border bg-card text-text-primary text-[14px] font-body outline-none focus:border-teal transition-colors" />
+                  </FormField>
                 </div>
 
-                <div style={styles.fieldGroup}>
-                  <label style={styles.label}>Description * (English)</label>
-                  <textarea
-                    style={styles.textarea}
-                    placeholder="Brief description of the exam..."
-                    value={examForm.description}
-                    onChange={(e) =>
-                      updateExamForm("description", e.target.value)
-                    }
-                    rows={2}
-                  />
+                <FormField label="Description * (English)">
+                  <textarea rows={2} placeholder="Brief description..." value={examForm.description} onChange={(e) => updateExamForm("description", e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-border bg-card text-text-primary text-[14px] font-body outline-none focus:border-teal transition-colors resize-y" />
+                </FormField>
+
+                <FormField label="Description (Thai)">
+                  <textarea rows={2} placeholder="คำอธิบายภาษาไทย..." value={examForm.description_th} onChange={(e) => updateExamForm("description_th", e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-border bg-card text-text-primary text-[14px] font-body outline-none focus:border-teal transition-colors resize-y" />
+                </FormField>
+
+                <div className="flex gap-4 flex-wrap">
+                  {[
+                    { label: "Category *", field: "category", options: ["English","Thai National","Math","Science","Other"] },
+                    { label: "Difficulty *", field: "difficulty", options: ["Beginner","Intermediate","Advanced"] },
+                  ].map(({ label, field, options }) => (
+                    <div key={field} className="flex flex-col gap-1.5 flex-1 min-w-[140px]">
+                      <label className="font-body font-semibold text-[13px] text-text-secondary">{label}</label>
+                      <select value={examForm[field]} onChange={(e) => updateExamForm(field, e.target.value)}
+                        className="px-4 py-3 rounded-xl border border-border bg-card text-text-primary text-[14px] font-body outline-none focus:border-teal transition-colors">
+                        {options.map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+                  ))}
                 </div>
 
-                <div style={styles.fieldGroup}>
-                  <label style={styles.label}>Description (Thai)</label>
-                  <textarea
-                    style={styles.textarea}
-                    placeholder="คำอธิบายภาษาไทย..."
-                    value={examForm.description_th}
-                    onChange={(e) =>
-                      updateExamForm("description_th", e.target.value)
-                    }
-                    rows={2}
-                  />
-                </div>
+                <label className="flex items-center gap-2.5 cursor-pointer">
+                  <input type="checkbox" checked={examForm.is_premium} onChange={(e) => updateExamForm("is_premium", e.target.checked)} className="w-4 h-4" />
+                  <span className="font-body text-[14px] text-text-secondary">Premium exam (requires subscription)</span>
+                </label>
 
-                <div style={styles.rowGroup}>
-                  <div style={{ ...styles.fieldGroup, flex: 1 }}>
-                    <label style={styles.label}>Category *</label>
-                    <select
-                      style={styles.select}
-                      value={examForm.category}
-                      onChange={(e) =>
-                        updateExamForm("category", e.target.value)
-                      }
-                    >
-                      {[
-                        "English",
-                        "Thai National",
-                        "Math",
-                        "Science",
-                        "Other",
-                      ].map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div style={{ ...styles.fieldGroup, flex: 1 }}>
-                    <label style={styles.label}>Difficulty *</label>
-                    <select
-                      style={styles.select}
-                      value={examForm.difficulty}
-                      onChange={(e) =>
-                        updateExamForm("difficulty", e.target.value)
-                      }
-                    >
-                      {["Beginner", "Intermediate", "Advanced"].map((d) => (
-                        <option key={d} value={d}>
-                          {d}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div style={styles.checkboxRow}>
-                  <input
-                    type="checkbox"
-                    id="exam_is_premium"
-                    checked={examForm.is_premium}
-                    onChange={(e) =>
-                      updateExamForm("is_premium", e.target.checked)
-                    }
-                  />
-                  <label htmlFor="exam_is_premium" style={styles.checkboxLabel}>
-                    Premium exam (requires subscription)
-                  </label>
-                </div>
-
-                <div style={styles.formButtons}>
-                  <button
-                    style={styles.secondaryButton}
-                    onClick={() => setActiveTab("questions")}
-                  >
+                <div className="flex gap-3 justify-end mt-2">
+                  <button onClick={() => setActiveTab("questions")}
+                    className="px-6 py-3 bg-transparent border border-border text-text-secondary rounded-xl font-body font-semibold text-[14px] cursor-pointer hover:border-border-strong transition-colors">
                     Cancel
                   </button>
-                  <button
-                    style={{
-                      ...styles.primaryButton,
-                      opacity: saving ? 0.6 : 1,
-                    }}
-                    onClick={handleAddExam}
-                    disabled={saving}
-                  >
+                  <button onClick={handleAddExam} disabled={saving}
+                    className={`px-6 py-3 bg-teal text-base border-none rounded-xl font-body font-semibold text-[14px] cursor-pointer transition-opacity ${saving ? "opacity-60" : "opacity-100"}`}>
                     {saving ? "Saving..." : "Save Exam"}
                   </button>
                 </div>
@@ -599,369 +333,13 @@ function AdminPage() {
   );
 }
 
-const styles = {
-  page: {
-    minHeight: "100vh",
-    backgroundColor: colors.offWhite,
-  },
-  loadingScreen: {
-    height: "100vh",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.navy,
-  },
-  loadingText: {
-    color: colors.gray300,
-    fontFamily: fonts.body,
-    fontSize: "16px",
-  },
-  content: {
-    maxWidth: "1100px",
-    margin: "0 auto",
-    padding: "40px 32px 80px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "24px",
-  },
-  pageHeader: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "4px",
-  },
-  pageTitle: {
-    fontFamily: fonts.heading,
-    fontSize: "40px",
-    color: colors.navy,
-    letterSpacing: "1px",
-  },
-  pageSub: {
-    fontFamily: fonts.body,
-    fontSize: "14px",
-    color: colors.gray500,
-  },
-  successBox: {
-    backgroundColor: colors.successLight,
-    color: colors.success,
-    border: `1px solid ${colors.success}`,
-    borderRadius: "10px",
-    padding: "12px 16px",
-    fontSize: "14px",
-    fontFamily: fonts.body,
-  },
-  errorBox: {
-    backgroundColor: colors.dangerLight,
-    color: colors.danger,
-    border: `1px solid ${colors.danger}`,
-    borderRadius: "10px",
-    padding: "12px 16px",
-    fontSize: "14px",
-    fontFamily: fonts.body,
-  },
-  layout: {
-    display: "grid",
-    gridTemplateColumns: "220px 1fr",
-    gap: "24px",
-    alignItems: "start",
-  },
-  sidebar: {
-    backgroundColor: colors.white,
-    borderRadius: "16px",
-    padding: "16px",
-    boxShadow: "0 2px 12px rgba(0,0,0,0.05)",
-    display: "flex",
-    flexDirection: "column",
-    gap: "6px",
-  },
-  sidebarTitle: {
-    fontFamily: fonts.body,
-    fontWeight: "700",
-    fontSize: "12px",
-    color: colors.gray500,
-    textTransform: "uppercase",
-    letterSpacing: "0.8px",
-    padding: "4px 8px",
-    marginBottom: "4px",
-  },
-  examButton: {
-    background: "none",
-    border: "none",
-    padding: "10px 12px",
-    borderRadius: "8px",
-    cursor: "pointer",
-    textAlign: "left",
-    display: "flex",
-    flexDirection: "column",
-    gap: "2px",
-    fontFamily: fonts.body,
-    fontSize: "14px",
-    color: colors.navy,
-    fontWeight: "500",
-  },
-  examButtonActive: {
-    background: colors.tealLight,
-    border: "none",
-    padding: "10px 12px",
-    borderRadius: "8px",
-    cursor: "pointer",
-    textAlign: "left",
-    display: "flex",
-    flexDirection: "column",
-    gap: "2px",
-    fontFamily: fonts.body,
-    fontSize: "14px",
-    color: colors.tealDark,
-    fontWeight: "700",
-  },
-  examButtonSub: {
-    fontSize: "11px",
-    color: colors.gray500,
-    fontWeight: "400",
-  },
-  addExamButton: {
-    marginTop: "8px",
-    background: "none",
-    border: `1px dashed ${colors.gray300}`,
-    padding: "10px 12px",
-    borderRadius: "8px",
-    cursor: "pointer",
-    textAlign: "left",
-    fontFamily: fonts.body,
-    fontSize: "13px",
-    color: colors.gray500,
-    fontWeight: "500",
-  },
-  main: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "16px",
-  },
-  tabBar: {
-    display: "flex",
-    gap: "8px",
-  },
-  tab: {
-    padding: "8px 20px",
-    borderRadius: "100px",
-    border: `1px solid ${colors.gray300}`,
-    backgroundColor: "transparent",
-    color: colors.gray700,
-    fontFamily: fonts.body,
-    fontWeight: "500",
-    fontSize: "14px",
-    cursor: "pointer",
-  },
-  tabActive: {
-    padding: "8px 20px",
-    borderRadius: "100px",
-    border: "none",
-    backgroundColor: colors.navy,
-    color: colors.white,
-    fontFamily: fonts.body,
-    fontWeight: "600",
-    fontSize: "14px",
-    cursor: "pointer",
-  },
-  questionList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "12px",
-  },
-  questionCard: {
-    backgroundColor: colors.white,
-    borderRadius: "12px",
-    padding: "20px",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-    display: "flex",
-    flexDirection: "column",
-    gap: "10px",
-  },
-  questionCardHeader: {
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-  },
-  questionNumber: {
-    fontFamily: fonts.heading,
-    fontSize: "18px",
-    color: colors.teal,
-    minWidth: "32px",
-  },
-  questionTags: {
-    display: "flex",
-    gap: "6px",
-    flexGrow: 1,
-  },
-  tag: {
-    backgroundColor: colors.gray100,
-    color: colors.gray700,
-    fontSize: "11px",
-    fontWeight: "600",
-    padding: "2px 8px",
-    borderRadius: "100px",
-    fontFamily: fonts.body,
-  },
-  tagPremium: {
-    backgroundColor: colors.warningLight,
-    color: colors.warning,
-    fontSize: "11px",
-    fontWeight: "600",
-    padding: "2px 8px",
-    borderRadius: "100px",
-    fontFamily: fonts.body,
-  },
-  deleteButton: {
-    background: "none",
-    border: `1px solid ${colors.danger}`,
-    color: colors.danger,
-    padding: "4px 12px",
-    borderRadius: "6px",
-    fontSize: "12px",
-    fontFamily: fonts.body,
-    cursor: "pointer",
-  },
-  questionText: {
-    fontFamily: fonts.body,
-    fontSize: "15px",
-    fontWeight: "600",
-    color: colors.navy,
-    lineHeight: "1.5",
-  },
-  optionGrid: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "4px 16px",
-  },
-  optionText: {
-    fontFamily: fonts.body,
-    fontSize: "13px",
-    lineHeight: "1.5",
-  },
-  explanation: {
-    fontFamily: fonts.body,
-    fontSize: "13px",
-    color: colors.gray500,
-    lineHeight: "1.5",
-    borderTop: `1px solid ${colors.gray100}`,
-    paddingTop: "10px",
-  },
-  emptyState: {
-    backgroundColor: colors.white,
-    borderRadius: "16px",
-    padding: "60px 32px",
-    textAlign: "center",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: "16px",
-    boxShadow: "0 2px 12px rgba(0,0,0,0.05)",
-  },
-  emptyText: {
-    fontFamily: fonts.body,
-    fontSize: "15px",
-    color: colors.gray500,
-  },
-  formCard: {
-    backgroundColor: colors.white,
-    borderRadius: "16px",
-    padding: "28px",
-    boxShadow: "0 2px 12px rgba(0,0,0,0.05)",
-    display: "flex",
-    flexDirection: "column",
-    gap: "16px",
-  },
-  formTitle: {
-    fontFamily: fonts.body,
-    fontWeight: "700",
-    fontSize: "18px",
-    color: colors.navy,
-  },
-  fieldGroup: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "6px",
-  },
-  rowGroup: {
-    display: "flex",
-    gap: "16px",
-    flexWrap: "wrap",
-  },
-  label: {
-    fontFamily: fonts.body,
-    fontSize: "13px",
-    fontWeight: "600",
-    color: colors.gray700,
-  },
-  input: {
-    padding: "10px 14px",
-    borderRadius: "8px",
-    border: `2px solid ${colors.gray100}`,
-    fontSize: "14px",
-    fontFamily: fonts.body,
-    color: colors.navy,
-    outline: "none",
-    width: "100%",
-  },
-  textarea: {
-    padding: "10px 14px",
-    borderRadius: "8px",
-    border: `2px solid ${colors.gray100}`,
-    fontSize: "14px",
-    fontFamily: fonts.body,
-    color: colors.navy,
-    outline: "none",
-    width: "100%",
-    resize: "vertical",
-  },
-  select: {
-    padding: "10px 14px",
-    borderRadius: "8px",
-    border: `2px solid ${colors.gray100}`,
-    fontSize: "14px",
-    fontFamily: fonts.body,
-    color: colors.navy,
-    outline: "none",
-    width: "100%",
-    backgroundColor: colors.white,
-  },
-  checkboxRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-  },
-  checkboxLabel: {
-    fontFamily: fonts.body,
-    fontSize: "14px",
-    color: colors.gray700,
-  },
-  formButtons: {
-    display: "flex",
-    gap: "12px",
-    justifyContent: "flex-end",
-    marginTop: "8px",
-  },
-  primaryButton: {
-    padding: "11px 24px",
-    backgroundColor: colors.navy,
-    color: colors.white,
-    border: "none",
-    borderRadius: "10px",
-    fontSize: "14px",
-    fontWeight: "600",
-    fontFamily: fonts.body,
-    cursor: "pointer",
-  },
-  secondaryButton: {
-    padding: "11px 24px",
-    backgroundColor: colors.white,
-    color: colors.navy,
-    border: `2px solid ${colors.gray300}`,
-    borderRadius: "10px",
-    fontSize: "14px",
-    fontWeight: "600",
-    fontFamily: fonts.body,
-    cursor: "pointer",
-  },
-};
+function FormField({ label, children, className = "" }) {
+  return (
+    <div className={`flex flex-col gap-1.5 ${className}`}>
+      <label className="font-body font-semibold text-[13px] text-text-secondary">{label}</label>
+      {children}
+    </div>
+  );
+}
 
 export default AdminPage;

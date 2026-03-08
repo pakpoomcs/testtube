@@ -1,375 +1,185 @@
 // src/pages/AuthScreen.js
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { supabase } from '../supabaseClient'
-import { theme } from '../styles/theme'
-
-const { colors, fonts } = theme
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "../supabaseClient";
 
 function AuthScreen() {
-  const navigate = useNavigate()
-  const [mode, setMode] = useState('signin')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [message, setMessage] = useState(null)
-  const [animating, setAnimating] = useState(false)
+  const navigate = useNavigate();
+  const [mode, setMode] = useState("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [message, setMessage] = useState(null);
+  const [animating, setAnimating] = useState(false);
 
   async function handleSubmit() {
-    setError(null)
-    setMessage(null)
-    setLoading(true)
-
+    setError(null);
+    setMessage(null);
+    setLoading(true);
     try {
-      if (mode === 'signup') {
-        const { error } = await supabase.auth.signUp({ email, password })
-        if (error) throw error
-        setMessage('Account created! Check your email to confirm, then sign in.')
+      if (mode === "signup") {
+        const { error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+        setMessage("Account created! Check your email to confirm, then sign in.");
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password })
-        if (error) throw error
-        navigate('/')
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        navigate("/");
       }
     } catch (err) {
-      setError(err.message)
+      setError(err.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   function handleKeyDown(e) {
-    if (e.key === 'Enter') handleSubmit()
+    if (e.key === "Enter") handleSubmit();
   }
 
   function switchMode(newMode) {
-    if (newMode === mode || animating) return
-    setAnimating(true)
-    setError(null)
-    setMessage(null)
-    // Brief delay so the fade-out is visible before content changes
+    if (newMode === mode || animating) return;
+    setAnimating(true);
+    setError(null);
+    setMessage(null);
     setTimeout(() => {
-      setMode(newMode)
-      setAnimating(false)
-    }, 200)
+      setMode(newMode);
+      setAnimating(false);
+    }, 200);
   }
 
-  const isSignIn = mode === 'signin'
+  const isSignIn = mode === "signin";
 
   return (
-    <div style={styles.page}>
-      <div style={styles.bgTop} />
+    <div className="min-h-screen bg-base flex items-center justify-center p-6 relative overflow-hidden">
+      {/* Top background accent */}
+      <div className="absolute top-0 left-0 right-0 h-1/2 bg-elevated z-0" />
 
-      <div style={styles.card}>
+      {/* Card */}
+      <div className="bg-card border border-border rounded-2xl w-full max-w-[420px] relative z-10 overflow-hidden shadow-lg">
 
-        {/* ── Mode switcher tabs ── */}
-        <div style={styles.tabSwitcher}>
-          <button
-            style={isSignIn ? styles.tabActive : styles.tabInactive}
-            onClick={() => switchMode('signin')}
-          >
-            Sign In
-          </button>
-          <button
-            style={!isSignIn ? styles.tabActive : styles.tabInactive}
-            onClick={() => switchMode('signup')}
-          >
-            Sign Up
-          </button>
+        {/* Tab switcher */}
+        <div className="flex border-b border-border">
+          {["signin", "signup"].map((m) => (
+            <button
+              key={m}
+              onClick={() => switchMode(m)}
+              className={`flex-1 py-4 text-[15px] font-body cursor-pointer border-none transition-all duration-200 ${
+                mode === m
+                  ? "font-bold text-text-primary bg-card border-b-2 border-teal"
+                  : "font-medium text-text-tertiary bg-base border-b-2 border-transparent"
+              }`}
+            >
+              {m === "signin" ? "Sign In" : "Sign Up"}
+            </button>
+          ))}
         </div>
 
-        {/* ── Animated content area ── */}
-        <div style={{
-          ...styles.formContent,
-          opacity: animating ? 0 : 1,
-          transform: animating ? 'translateY(6px)' : 'translateY(0)',
-          transition: 'opacity 0.2s ease, transform 0.2s ease',
-        }}>
-
+        {/* Animated content */}
+        <div
+          className="p-8 flex flex-col gap-4"
+          style={{
+            opacity: animating ? 0 : 1,
+            transform: animating ? "translateY(6px)" : "translateY(0)",
+            transition: "opacity 0.2s ease, transform 0.2s ease",
+          }}
+        >
           {/* Logo */}
-          <div style={styles.logoRow}>
-            <span style={styles.logoIcon}>🧪</span>
-            <span style={styles.logoText}>TestTube</span>
+          <div className="flex items-center gap-2">
+            <span className="text-[22px]">🧪</span>
+            <span className="font-heading text-[22px] text-teal tracking-[2px]">TestTube</span>
           </div>
 
-          <h1 style={styles.title}>
-            {isSignIn ? 'Welcome back' : 'Create your account'}
-          </h1>
-          <p style={styles.subtitle}>
-            {isSignIn
-              ? 'Sign in to continue your test prep.'
-              : 'Join students preparing smarter across Thailand.'}
-          </p>
+          <div>
+            <h1 className="font-body font-bold text-[24px] text-text-primary leading-tight">
+              {isSignIn ? "Welcome back" : "Create your account"}
+            </h1>
+            <p className="font-body text-[14px] text-text-secondary mt-1 leading-relaxed">
+              {isSignIn
+                ? "Sign in to continue your test prep."
+                : "Join students preparing smarter across Thailand."}
+            </p>
+          </div>
 
-          {error && <div style={styles.errorBox}>{error}</div>}
-          {message && <div style={styles.successBox}>{message}</div>}
+          {error && (
+            <div className="bg-danger-bg text-danger border border-danger rounded-xl p-3 text-[14px] font-body">
+              {error}
+            </div>
+          )}
+          {message && (
+            <div className="bg-success-bg text-success border border-success rounded-xl p-3 text-[14px] font-body">
+              {message}
+            </div>
+          )}
 
           {/* Email */}
-          <div style={styles.fieldGroup}>
-            <label style={styles.label}>Email</label>
+          <div className="flex flex-col gap-1.5">
+            <label className="font-body text-[13px] font-semibold text-text-secondary">Email</label>
             <input
-              style={styles.input}
               type="email"
               placeholder="you@email.com"
               value={email}
-              onChange={e => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value)}
               onKeyDown={handleKeyDown}
+              className="px-4 py-3 rounded-xl border border-border bg-elevated text-text-primary text-[15px] font-body outline-none focus:border-teal transition-colors"
             />
           </div>
 
-          {/* Password with toggle */}
-          <div style={styles.fieldGroup}>
-            <label style={styles.label}>Password</label>
-            <div style={styles.passwordWrapper}>
+          {/* Password */}
+          <div className="flex flex-col gap-1.5">
+            <label className="font-body text-[13px] font-semibold text-text-secondary">Password</label>
+            <div className="relative flex items-center">
               <input
-                style={styles.passwordInput}
-                type={showPassword ? 'text' : 'password'}
+                type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
                 value={password}
-                onChange={e => setPassword(e.target.value)}
+                onChange={(e) => setPassword(e.target.value)}
                 onKeyDown={handleKeyDown}
+                className="w-full px-4 py-3 pr-12 rounded-xl border border-border bg-elevated text-text-primary text-[15px] font-body outline-none focus:border-teal transition-colors"
               />
               <button
-                style={styles.eyeButton}
                 onClick={() => setShowPassword(!showPassword)}
                 tabIndex={-1}
+                className="absolute right-3 bg-transparent border-none cursor-pointer text-[16px] text-text-secondary"
               >
-                {showPassword ? '🙈' : '👁️'}
+                {showPassword ? "🙈" : "👁️"}
               </button>
             </div>
           </div>
 
-          {/* Sign up extras */}
           {!isSignIn && (
-            <p style={styles.termsText}>
+            <p className="font-body text-[12px] text-text-tertiary leading-relaxed">
               By creating an account you agree to our Terms of Service and Privacy Policy.
             </p>
           )}
 
           {/* Submit */}
           <button
-            style={{ ...styles.submitButton, opacity: loading ? 0.6 : 1,
-              backgroundColor: isSignIn ? colors.navy : colors.teal
-            }}
             onClick={handleSubmit}
             disabled={loading}
+            className={`w-full py-[14px] rounded-xl text-[16px] font-bold font-body text-white border-none cursor-pointer transition-opacity mt-1 ${
+              isSignIn ? "bg-teal" : "bg-teal"
+            } ${loading ? "opacity-60" : "opacity-100"}`}
           >
-            {loading
-              ? 'Please wait...'
-              : isSignIn ? 'Sign In →' : 'Create Account →'}
+            {loading ? "Please wait..." : isSignIn ? "Sign In →" : "Create Account →"}
           </button>
 
-          {/* Bottom toggle */}
-          <p style={styles.toggleText}>
-            {isSignIn ? "Don't have an account? " : 'Already have an account? '}
+          {/* Toggle */}
+          <p className="font-body text-[14px] text-text-secondary text-center">
+            {isSignIn ? "Don't have an account? " : "Already have an account? "}
             <button
-              style={styles.toggleButton}
-              onClick={() => switchMode(isSignIn ? 'signup' : 'signin')}
+              onClick={() => switchMode(isSignIn ? "signup" : "signin")}
+              className="bg-transparent border-none text-teal font-bold text-[14px] font-body cursor-pointer p-0"
             >
-              {isSignIn ? 'Sign up free' : 'Sign in'}
+              {isSignIn ? "Sign up free" : "Sign in"}
             </button>
           </p>
-
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-const styles = {
-  page: {
-    minHeight: '100vh',
-    backgroundColor: colors.offWhite,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '24px',
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  bgTop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: '50vh',
-    backgroundColor: colors.navy,
-    zIndex: 0,
-  },
-  card: {
-    backgroundColor: colors.white,
-    borderRadius: '24px',
-    width: '100%',
-    maxWidth: '420px',
-    boxShadow: '0 8px 40px rgba(0,0,0,0.12)',
-    position: 'relative',
-    zIndex: 1,
-    overflow: 'hidden',
-  },
-  tabSwitcher: {
-    display: 'flex',
-    borderBottom: `1px solid ${colors.gray100}`,
-  },
-  tabActive: {
-    flex: 1,
-    padding: '16px',
-    border: 'none',
-    borderBottom: `3px solid ${colors.teal}`,
-    backgroundColor: colors.white,
-    color: colors.navy,
-    fontFamily: fonts.body,
-    fontWeight: '700',
-    fontSize: '15px',
-    cursor: 'pointer',
-  },
-  tabInactive: {
-    flex: 1,
-    padding: '16px',
-    border: 'none',
-    borderBottom: `3px solid transparent`,
-    backgroundColor: colors.offWhite,
-    color: colors.gray500,
-    fontFamily: fonts.body,
-    fontWeight: '500',
-    fontSize: '15px',
-    cursor: 'pointer',
-  },
-  formContent: {
-    padding: '32px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '16px',
-  },
-  logoRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-  },
-  logoIcon: {
-    fontSize: '22px',
-  },
-  logoText: {
-    fontFamily: fonts.heading,
-    fontSize: '22px',
-    color: colors.teal,
-    letterSpacing: '2px',
-  },
-  title: {
-    fontFamily: fonts.body,
-    fontWeight: '700',
-    fontSize: '24px',
-    color: colors.navy,
-    lineHeight: '1.2',
-  },
-  subtitle: {
-    fontFamily: fonts.body,
-    fontSize: '14px',
-    color: colors.gray500,
-    marginTop: '-8px',
-    lineHeight: '1.5',
-  },
-  errorBox: {
-    backgroundColor: colors.dangerLight,
-    color: colors.danger,
-    border: `1px solid ${colors.danger}`,
-    borderRadius: '10px',
-    padding: '12px 14px',
-    fontSize: '14px',
-    fontFamily: fonts.body,
-  },
-  successBox: {
-    backgroundColor: colors.successLight,
-    color: colors.success,
-    border: `1px solid ${colors.success}`,
-    borderRadius: '10px',
-    padding: '12px 14px',
-    fontSize: '14px',
-    fontFamily: fonts.body,
-  },
-  fieldGroup: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-  },
-  label: {
-    fontFamily: fonts.body,
-    fontSize: '13px',
-    fontWeight: '600',
-    color: colors.gray700,
-  },
-  input: {
-    padding: '12px 14px',
-    borderRadius: '10px',
-    border: `2px solid ${colors.gray100}`,
-    fontSize: '15px',
-    fontFamily: fonts.body,
-    color: colors.navy,
-    outline: 'none',
-    width: '100%',
-  },
-  passwordWrapper: {
-    position: 'relative',
-    display: 'flex',
-    alignItems: 'center',
-  },
-  passwordInput: {
-    padding: '12px 44px 12px 14px',
-    borderRadius: '10px',
-    border: `2px solid ${colors.gray100}`,
-    fontSize: '15px',
-    fontFamily: fonts.body,
-    color: colors.navy,
-    outline: 'none',
-    width: '100%',
-  },
-  eyeButton: {
-    position: 'absolute',
-    right: '12px',
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    fontSize: '16px',
-    padding: '4px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  termsText: {
-    fontFamily: fonts.body,
-    fontSize: '12px',
-    color: colors.gray500,
-    lineHeight: '1.5',
-    marginTop: '-4px',
-  },
-  submitButton: {
-    padding: '14px',
-    color: colors.white,
-    border: 'none',
-    borderRadius: '12px',
-    fontSize: '16px',
-    fontWeight: '600',
-    fontFamily: fonts.body,
-    cursor: 'pointer',
-    marginTop: '4px',
-    transition: 'background-color 0.2s ease',
-  },
-  toggleText: {
-    fontFamily: fonts.body,
-    fontSize: '14px',
-    color: colors.gray500,
-    textAlign: 'center',
-  },
-  toggleButton: {
-    background: 'none',
-    border: 'none',
-    color: colors.teal,
-    fontWeight: '700',
-    fontSize: '14px',
-    fontFamily: fonts.body,
-    cursor: 'pointer',
-    padding: 0,
-  },
-}
-
-export default AuthScreen
+export default AuthScreen;
