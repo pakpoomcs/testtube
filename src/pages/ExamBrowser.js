@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../supabaseClient";
+import { isServiceUnavailableError } from "../supabaseClient";
 
 const CARD_THEMES = {
   IELTS: {
@@ -91,7 +92,7 @@ function ExamBrowser() {
   const [examDifficultyFilters, setExamDifficultyFilters] = useState({});
   const [examQuestionStats, setExamQuestionStats] = useState({});
   const [examProgressStats, setExamProgressStats] = useState({});
-  const { user } = useAuth();
+  const { user, serviceUnavailable } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -161,7 +162,11 @@ function ExamBrowser() {
         return next;
       });
     } catch (err) {
-      setError("Failed to load exams. Please try again.");
+      setError(
+        isServiceUnavailableError(err)
+          ? "Supabase is temporarily unavailable (HTTP 520). Please wait a moment and refresh."
+          : "Failed to load exams. Please try again."
+      );
       setExamQuestionStats({});
       setExamProgressStats({});
     } finally {
@@ -194,10 +199,12 @@ function ExamBrowser() {
       </div>
     );
 
-  if (error)
+  if (error || serviceUnavailable)
     return (
       <div className="tt-page flex items-center justify-center">
-        <p className="font-body text-danger">{error}</p>
+        <p className="font-body text-danger">
+          {error || "Supabase is temporarily unavailable (HTTP 520). Please wait a moment and refresh."}
+        </p>
       </div>
     );
 

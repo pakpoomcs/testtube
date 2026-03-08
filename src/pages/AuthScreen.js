@@ -1,11 +1,14 @@
 // src/pages/AuthScreen.js
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 
 function AuthScreen() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState("signin");
+  const location = useLocation();
+  const initialMode = location.state?.defaultMode === "signup" ? "signup" : "signin";
+  const returnTo = location.state?.returnTo;
+  const [mode, setMode] = useState(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -26,7 +29,7 @@ function AuthScreen() {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        navigate("/");
+        navigate(returnTo || "/");
       }
     } catch (err) {
       setError(err.message);

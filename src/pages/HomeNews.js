@@ -166,6 +166,8 @@ function HomeNews() {
   const [examDifficultyFilters, setExamDifficultyFilters] = useState({});
   const [examQuestionStats, setExamQuestionStats] = useState({});
   const [examProgressStats, setExamProgressStats] = useState({});
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+  const [pendingTestUrl, setPendingTestUrl] = useState("");
 
   const [snapshot, setSnapshot] = useState({
     testsTaken: 0,
@@ -369,6 +371,16 @@ function HomeNews() {
     return `/test/${examId}?difficulty=${values.join(",")}`;
   }
 
+  function openTest(examId, selectedLevels) {
+    const url = getTestUrl(examId, selectedLevels);
+    if (!user) {
+      setPendingTestUrl(url);
+      setShowAuthPrompt(true);
+      return;
+    }
+    navigate(url);
+  }
+
   function sendChatMessage() {
     const message = chatInput.trim();
     if (!message) return;
@@ -548,14 +560,14 @@ function HomeNews() {
                         </button>
                       ) : exam.is_premium ? (
                         <button
-                          onClick={() => navigate(getTestUrl(exam.id, selectedDifficulties))}
+                          onClick={() => openTest(exam.id, selectedDifficulties)}
                           className="mt-auto h-12 w-full rounded-lg border border-warning/35 bg-warning/30 px-2 text-[12px] font-bold text-amber-50 transition-all duration-300 ease-out hover:bg-warning/40"
                         >
                           Unlock →
                         </button>
                       ) : (
                         <button
-                          onClick={() => navigate(getTestUrl(exam.id, selectedDifficulties))}
+                          onClick={() => openTest(exam.id, selectedDifficulties)}
                           className={`mt-auto h-12 w-full rounded-lg border px-2 text-[14px] font-bold text-white transition-all duration-300 ease-out ${theme.button}`}
                         >
                           Start →
@@ -670,6 +682,61 @@ function HomeNews() {
           {newsError && <p className="mt-3 text-[13px] text-warning">{newsError}</p>}
         </section>
       </div>
+      {showAuthPrompt && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <button
+            type="button"
+            aria-label="Close sign-in prompt"
+            className="absolute inset-0 bg-slate-950/65 backdrop-blur-[2px]"
+            onClick={() => setShowAuthPrompt(false)}
+          />
+          <div className="relative z-10 w-full max-w-[460px] overflow-hidden rounded-3xl border border-cyan-200/35 bg-gradient-to-br from-slate-900/95 via-slate-800/94 to-slate-900/96 p-6 shadow-[0_28px_80px_rgba(5,15,30,0.62)]">
+            <div className="pointer-events-none absolute -right-10 -top-12 h-44 w-44 rounded-full bg-cyan-300/18 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-16 -left-8 h-48 w-48 rounded-full bg-emerald-300/14 blur-3xl" />
+
+            <div className="relative z-10">
+              <p className="inline-flex rounded-full border border-cyan-200/35 bg-cyan-300/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.9px] text-cyan-100">
+                Members Only For Test Start
+              </p>
+              <h3 className="mt-3 font-body text-[28px] font-bold leading-tight text-white">
+                Sign in to start this test
+              </h3>
+              <p className="mt-2 text-[13px] leading-relaxed text-slate-200/90">
+                Free tests are available, but you need an account to save progress and submit answers.
+              </p>
+              <div className="mt-5 rounded-2xl border border-white/12 bg-black/20 p-3 text-[12px] text-slate-200/85">
+                Selected test URL: <span className="font-semibold text-white">{pendingTestUrl || "New test"}</span>
+              </div>
+
+              <div className="mt-5 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => navigate("/auth", { state: { returnTo: pendingTestUrl } })}
+                  className="rounded-xl border border-cyan-200/40 bg-cyan-400/18 px-4 py-3 text-[14px] font-bold text-cyan-50 transition-colors hover:bg-cyan-400/28"
+                >
+                  Sign In
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigate("/auth", { state: { defaultMode: "signup", returnTo: pendingTestUrl } })
+                  }
+                  className="rounded-xl border border-emerald-200/40 bg-emerald-400/18 px-4 py-3 text-[14px] font-bold text-emerald-50 transition-colors hover:bg-emerald-400/30"
+                >
+                  Create Account
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAuthPrompt(false)}
+                className="mt-3 w-full rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-[13px] font-semibold text-white/90 transition-colors hover:bg-white/16"
+              >
+                Maybe Later
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

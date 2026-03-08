@@ -23,17 +23,13 @@ function AppRoutes() {
         <Route
           path="/"
           element={
-            <ProtectedRoute>
-              <SinglePageHub />
-            </ProtectedRoute>
+            <SinglePageHub />
           }
         />
         <Route
           path="/practice"
           element={
-            <ProtectedRoute>
-              <SinglePageHub />
-            </ProtectedRoute>
+            <SinglePageHub />
           }
         />
         <Route
