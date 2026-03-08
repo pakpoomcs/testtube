@@ -1,6 +1,7 @@
 // src/context/AuthContext.js
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../supabaseClient'
+import { isServiceUnavailableError } from '../supabaseClient'
 
 const AuthContext = createContext({})
 
@@ -9,28 +10,38 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [serviceUnavailable, setServiceUnavailable] = useState(false)
 
   useEffect(() => {
+    let isMounted = true
+
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!isMounted) return
       setUser(session?.user ?? null)
       if (session?.user) fetchProfile(session.user.id, session.user)
       else {
         setProfile(null)
+        setServiceUnavailable(false)
         setLoading(false)
       }
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!isMounted) return
       setUser(session?.user ?? null)
       if (session?.user) fetchProfile(session.user.id, session.user)
       else {
         setProfile(null)
         setIsAdmin(false)
+        setServiceUnavailable(false)
         setLoading(false)
       }
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      isMounted = false
+      subscription.unsubscribe()
+    }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   function mergeProfile(dbProfile, authUser) {
@@ -61,9 +72,11 @@ export function AuthProvider({ children }) {
       const merged = mergeProfile(data || null, authUser)
       setProfile(merged)
       setIsAdmin(data?.is_admin ?? false)
+      setServiceUnavailable(false)
     } catch (err) {
       setProfile(mergeProfile(null, authUser))
       setIsAdmin(false)
+      setServiceUnavailable(isServiceUnavailableError(err))
     } finally {
       setLoading(false)
     }
@@ -121,11 +134,26 @@ export function AuthProvider({ children }) {
   }
 
   async function signOut() {
-    await supabase.auth.signOut()
+    try {
+      // Local sign-out clears session on device even when network/auth edge is unstable.
+      const { error } = await supabase.auth.signOut({ scope: 'local' })
+      if (error) throw error
+    } catch (err) {
+      // Ensure UI exits authenticated state even if upstream logout endpoint fails.
+      setUser(null)
+      setProfile(null)
+      setIsAdmin(false)
+      setServiceUnavailable(isServiceUnavailableError(err))
+    } finally {
+      setUser(null)
+      setProfile(null)
+      setIsAdmin(false)
+      setLoading(false)
+    }
   }
 
   return (
-    <AuthContext.Provider value={{ user, profile, isAdmin, loading, signOut, refreshProfile, updateProfile }}>
+    <AuthContext.Provider value={{ user, profile, isAdmin, loading, serviceUnavailable, signOut, refreshProfile, updateProfile }}>
       {!loading && children}
     </AuthContext.Provider>
   )

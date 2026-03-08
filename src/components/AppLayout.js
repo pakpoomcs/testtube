@@ -30,13 +30,20 @@ function AppLayout({ children }) {
     .map((chunk) => chunk[0]?.toUpperCase() || "")
     .join("") || "S";
 
-  const menuItems = [
-    { label: "Home", onClick: () => navigate("/") },
-    { label: "Practice", onClick: () => navigate("/practice") },
-    { label: "Profile & Progress", onClick: () => navigate("/profile") },
-    ...(isAdmin ? [{ label: "Admin", onClick: () => navigate("/admin") }] : []),
-    { label: "Sign Out", onClick: signOut, danger: true },
-  ];
+  const menuItems = user
+    ? [
+        { label: "Home", onClick: () => navigate("/") },
+        { label: "Practice", onClick: () => navigate("/practice") },
+        { label: "Profile & Progress", onClick: () => navigate("/profile") },
+        ...(isAdmin ? [{ label: "Admin", onClick: () => navigate("/admin") }] : []),
+        { label: "Sign Out", onClick: signOut, danger: true },
+      ]
+    : [
+        { label: "Home", onClick: () => navigate("/") },
+        { label: "Practice", onClick: () => navigate("/practice") },
+        { label: "Sign In", onClick: () => navigate("/auth") },
+        { label: "Create Account", onClick: () => navigate("/auth", { state: { defaultMode: "signup" } }) },
+      ];
 
   return (
     <div className="relative pb-0">

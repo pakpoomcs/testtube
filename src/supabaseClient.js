@@ -11,4 +11,49 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables. Check your .env file.')
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+const RETRYABLE_STATUS = new Set([502, 503, 504, 520])
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+async function fetchWithRetry(input, init = {}) {
+  const method = String(init?.method || 'GET').toUpperCase()
+  const isRetryableMethod = method === 'GET' || method === 'HEAD'
+  const maxAttempts = isRetryableMethod ? 3 : 1
+  let lastError = null
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      const response = await fetch(input, init)
+      if (!isRetryableMethod || !RETRYABLE_STATUS.has(response.status) || attempt === maxAttempts) {
+        return response
+      }
+    } catch (error) {
+      lastError = error
+      if (!isRetryableMethod || attempt === maxAttempts) throw error
+    }
+
+    await sleep(250 * attempt)
+  }
+
+  throw lastError || new Error('Request failed')
+}
+
+export function isServiceUnavailableError(error) {
+  const status = Number(error?.status || error?.response?.status)
+  if ([502, 503, 504, 520].includes(status)) return true
+
+  const message = String(error?.message || '').toLowerCase()
+  return (
+    message.includes('520') ||
+    message.includes('failed to fetch') ||
+    message.includes('service unavailable') ||
+    message.includes('bad gateway') ||
+    message.includes('gateway timeout')
+  )
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  global: { fetch: fetchWithRetry },
+})
