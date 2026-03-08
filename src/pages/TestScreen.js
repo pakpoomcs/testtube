@@ -4,7 +4,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { theme } from "../styles/theme";
 import { useAuth } from "../context/AuthContext";
-import NavBar from "../components/NavBar";
 
 const { colors, fonts } = theme;
 
@@ -160,8 +159,6 @@ function TestScreen() {
 
   return (
     <div style={styles.page}>
-      <NavBar />
-
       {/* ── Progress bar ── */}
       <div style={styles.progressTrack}>
         <div style={{ ...styles.progressFill, width: `${progressPercent}%` }} />
