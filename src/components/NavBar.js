@@ -1,161 +1,75 @@
-// src/components/NavBar.js
-// Shared navigation bar used across all pages.
-// Shows the TestTube logo, main nav links, and sign out button.
-
-import React from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
-import { theme } from '../styles/theme'
-
-
-const { colors, fonts } = theme
+import React from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 function NavBar() {
-
-  const navigate = useNavigate()
-  const location = useLocation()
-  const { user, signOut, isAdmin } = useAuth()
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user, signOut, isAdmin } = useAuth();
 
   function isActive(path) {
-    return location.pathname === path
+    return location.pathname === path;
   }
 
+  const baseLinkClass =
+    "rounded-lg px-3.5 py-1.5 text-sm font-body transition-all duration-150";
+  const inactiveLinkClass =
+    "bg-transparent text-text-secondary hover:bg-card hover:text-text-primary";
+  const activeLinkClass = "bg-teal/15 text-teal font-bold";
+
   return (
-    <nav style={styles.nav}>
-      {/* Logo */}
-      <button style={styles.logo} onClick={() => navigate('/')}>
-        🧪 <span style={styles.logoText}>TestTube</span>
+    <nav className="sticky top-0 z-[100] flex h-[60px] items-center justify-between bg-base px-8 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
+      <button
+        type="button"
+        className="flex items-center gap-2 bg-transparent text-[20px]"
+        onClick={() => navigate("/")}
+      >
+        🧪
+        <span className="font-heading text-[22px] tracking-[2px] text-teal">
+          TestTube
+        </span>
       </button>
 
-      {/* Nav links */}
-      <div style={styles.links}>
+      <div className="flex items-center gap-1">
         <button
-          style={isActive('/') ? styles.linkActive : styles.link}
-          onClick={() => navigate('/')}
+          type="button"
+          className={`${baseLinkClass} ${isActive("/practice") ? activeLinkClass : inactiveLinkClass}`}
+          onClick={() => navigate("/practice")}
         >
           Exams
         </button>
         <button
-          style={isActive('/dashboard') ? styles.linkActive : styles.link}
-          onClick={() => navigate('/dashboard')}
+          type="button"
+          className={`${baseLinkClass} ${isActive("/dashboard") ? activeLinkClass : inactiveLinkClass}`}
+          onClick={() => navigate("/dashboard")}
         >
           Dashboard
         </button>
         {isAdmin && (
-  <button
-    style={isActive('/admin') ? styles.linkActive : styles.linkAdmin}
-    onClick={() => navigate('/admin')}
-  >
-    ⚙️ Admin
-  </button>
-)}
+          <button
+            type="button"
+            className={`${baseLinkClass} ${isActive("/admin") ? activeLinkClass : "bg-warning-bg text-warning font-semibold"}`}
+            onClick={() => navigate("/admin")}
+          >
+            ⚙️ Admin
+          </button>
+        )}
       </div>
 
-      {/* Right side */}
-      <div style={styles.right}>
-        <span style={styles.email}>{user?.email}</span>
-        <button style={styles.signOutButton} onClick={signOut}>
+      <div className="flex items-center gap-3">
+        <span className="hidden max-w-[180px] truncate font-body text-[13px] text-text-secondary md:block">
+          {user?.email}
+        </span>
+        <button
+          type="button"
+          className="rounded-lg border border-white/20 px-3.5 py-1.5 font-body text-[13px] text-text-secondary transition-colors hover:border-border-strong hover:text-text-primary"
+          onClick={signOut}
+        >
           Sign out
         </button>
       </div>
     </nav>
-  )
+  );
 }
 
-const styles = {
-  nav: {
-    backgroundColor: colors.navy,
-    padding: '0 32px',
-    height: '60px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    position: 'sticky',
-    top: 0,
-    zIndex: 100,
-    boxShadow: '0 2px 12px rgba(0,0,0,0.2)',
-  },
-  logo: {
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    fontSize: '20px',
-    padding: 0,
-  },
-  logoText: {
-    fontFamily: fonts.heading,
-    fontSize: '22px',
-    color: colors.teal,
-    letterSpacing: '2px',
-  },
-  links: {
-    display: 'flex',
-    gap: '4px',
-    alignItems: 'center',
-  },
-  link: {
-    background: 'none',
-    border: 'none',
-    color: colors.gray300,
-    fontFamily: fonts.body,
-    fontSize: '14px',
-    fontWeight: '500',
-    padding: '6px 14px',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    transition: 'all 0.15s ease',
-  },
-  linkActive: {
-    background: 'rgba(0,194,168,0.15)',
-    border: 'none',
-    color: colors.teal,
-    fontFamily: fonts.body,
-    fontSize: '14px',
-    fontWeight: '700',
-    padding: '6px 14px',
-    borderRadius: '8px',
-    cursor: 'pointer',
-  },
-  right: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-  },
-  email: {
-    fontFamily: fonts.body,
-    fontSize: '13px',
-    color: colors.gray500,
-    // Hide on small screens
-    maxWidth: '180px',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-  },
-  signOutButton: {
-    background: 'none',
-    border: `1px solid rgba(255,255,255,0.2)`,
-    color: colors.gray300,
-    padding: '6px 14px',
-    borderRadius: '8px',
-    fontSize: '13px',
-    fontFamily: fonts.body,
-    cursor: 'pointer',
-  },
-  linkAdmin: {
-  background: 'rgba(240,165,0,0.15)',
-  border: 'none',
-  color: colors.warning,
-  fontFamily: fonts.body,
-  fontSize: '14px',
-  fontWeight: '600',
-  padding: '6px 14px',
-  borderRadius: '8px',
-  cursor: 'pointer',
-},
-
-}
-
-export default NavBar
+export default NavBar;

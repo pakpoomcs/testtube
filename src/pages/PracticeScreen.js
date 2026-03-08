@@ -3,21 +3,21 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 
 const EXAMS = [
-  { name: "IELTS", emoji: "🇬🇧", color: "#4F46E5" },
-  { name: "TOEIC", emoji: "💼", color: "#0EA5E9" },
-  { name: "TOEFL", emoji: "🎓", color: "#8B5CF6" },
-  { name: "ONET", emoji: "🇹🇭", color: "#F59E0B" },
-  { name: "TCAS", emoji: "📐", color: "#10B981" },
-  { name: "SAT", emoji: "🏫", color: "#EF4444" },
-  { name: "GED", emoji: "📜", color: "#EC4899" },
-  { name: "DET", emoji: "💻", color: "#06B6D4" },
+  { name: "IELTS", emoji: "🇬🇧", accentClass: "border-t-indigo-600" },
+  { name: "TOEIC", emoji: "💼", accentClass: "border-t-sky-500" },
+  { name: "TOEFL", emoji: "🎓", accentClass: "border-t-violet-500" },
+  { name: "ONET", emoji: "🇹🇭", accentClass: "border-t-amber-500" },
+  { name: "TCAS", emoji: "📐", accentClass: "border-t-emerald-500" },
+  { name: "SAT", emoji: "🏫", accentClass: "border-t-red-500" },
+  { name: "GED", emoji: "📜", accentClass: "border-t-pink-500" },
+  { name: "DET", emoji: "💻", accentClass: "border-t-cyan-500" },
 ];
 
 function PracticeScreen() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-base px-5 pt-8 pb-24">
+    <div className="tt-page px-5 pb-24 pt-8">
 
       {/* Header */}
       <div className="mb-6">
@@ -31,8 +31,7 @@ function PracticeScreen() {
           <button
             key={exam.name}
             onClick={() => navigate("/")}
-            className="bg-elevated border border-border rounded-2xl py-4 px-3 flex flex-col items-center gap-2 cursor-pointer hover:border-border-strong transition-all duration-150 hover:-translate-y-0.5"
-            style={{ borderTop: `3px solid ${exam.color}` }}
+            className={`tt-panel flex cursor-pointer flex-col items-center gap-2 border-t-[3px] px-3 py-4 transition-all duration-150 hover:-translate-y-0.5 hover:border-white/20 ${exam.accentClass}`}
           >
             <span className="text-[26px]">{exam.emoji}</span>
             <span className="font-body font-bold text-[12px] text-text-primary">{exam.name}</span>
@@ -49,7 +48,7 @@ function PracticeScreen() {
             <button
               key={opt}
               onClick={() => navigate("/")}
-              className="bg-elevated border border-border rounded-xl px-5 py-4 flex justify-between items-center cursor-pointer hover:border-border-strong transition-colors"
+              className="tt-panel-soft flex cursor-pointer items-center justify-between rounded-xl px-5 py-4 transition-colors hover:border-white/20"
             >
               <span className="font-body font-semibold text-[15px] text-text-primary">{opt}</span>
               <span className="text-teal font-bold text-[18px]">→</span>

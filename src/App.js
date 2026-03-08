@@ -2,15 +2,12 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import AppLayout from "./components/AppLayout";
-import ExamBrowser from "./pages/ExamBrowser";
 import TestScreen from "./pages/TestScreen";
 import ReportScreen from "./pages/ReportScreen";
 import AuthScreen from "./pages/AuthScreen";
-import Dashboard from "./pages/Dashboard";
-import AdminPage from "./pages/AdminPage";
-import ProfileScreen from "./pages/ProfileScreen";
-import PracticeScreen from "./pages/PracticeScreen";
+import SinglePageHub from "./pages/SinglePageHub";
 
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
@@ -27,7 +24,7 @@ function AppRoutes() {
           path="/"
           element={
             <ProtectedRoute>
-              <ExamBrowser />
+              <SinglePageHub />
             </ProtectedRoute>
           }
         />
@@ -35,7 +32,7 @@ function AppRoutes() {
           path="/practice"
           element={
             <ProtectedRoute>
-              <PracticeScreen />
+              <SinglePageHub />
             </ProtectedRoute>
           }
         />
@@ -59,7 +56,7 @@ function AppRoutes() {
           path="/dashboard"
           element={
             <ProtectedRoute>
-              <Dashboard />
+              <SinglePageHub />
             </ProtectedRoute>
           }
         />
@@ -67,7 +64,7 @@ function AppRoutes() {
           path="/profile"
           element={
             <ProtectedRoute>
-              <ProfileScreen />
+              <SinglePageHub />
             </ProtectedRoute>
           }
         />
@@ -75,7 +72,7 @@ function AppRoutes() {
           path="/admin"
           element={
             <ProtectedRoute>
-              <AdminPage />
+              <SinglePageHub />
             </ProtectedRoute>
           }
         />
@@ -86,11 +83,13 @@ function AppRoutes() {
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

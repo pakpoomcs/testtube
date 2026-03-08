@@ -1,30 +1,92 @@
-// src/pages/ProfileScreen.js
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { supabase } from "../supabaseClient";
 
 const EXAMS = ["IELTS", "TOEFL", "TOEIC", "SAT", "GED", "DET", "ONET", "TCAS"];
 const LEVELS = [
-  { value: "beginner", label: "🌱 Beginner" },
-  { value: "elementary", label: "📘 Elementary" },
-  { value: "intermediate", label: "📗 Intermediate" },
-  { value: "upper_intermediate", label: "📙 Upper Intermediate" },
-  { value: "advanced", label: "🏆 Advanced" },
+  { value: "beginner", label: "Beginner" },
+  { value: "elementary", label: "Elementary" },
+  { value: "intermediate", label: "Intermediate" },
+  { value: "upper_intermediate", label: "Upper Intermediate" },
+  { value: "advanced", label: "Advanced" },
 ];
 const GOALS = [5, 10, 20, 30];
 
+function normalizeWebsite(value) {
+  const trimmed = String(value || "").trim();
+  if (!trimmed) return "";
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+
+function loadImageFromFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("Could not read image."));
+      img.src = String(reader.result || "");
+    };
+    reader.onerror = () => reject(new Error("Could not read file."));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function toCompressedAvatarDataUrl(file) {
+  const img = await loadImageFromFile(file);
+  const maxSize = 640;
+  const ratio = Math.min(1, maxSize / Math.max(img.width, img.height));
+  const width = Math.max(1, Math.round(img.width * ratio));
+  const height = Math.max(1, Math.round(img.height * ratio));
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Could not process image.");
+  ctx.drawImage(img, 0, 0, width, height);
+  return canvas.toDataURL("image/webp", 0.82);
+}
+
+function buildForm(profile) {
+  return {
+    full_name: profile?.full_name || "",
+    username: profile?.username || "",
+    bio: profile?.bio || "",
+    location: profile?.location || "",
+    website: profile?.website || "",
+    avatar_url: profile?.avatar_url || "",
+    self_assessed_level: profile?.self_assessed_level || null,
+    target_exams: Array.isArray(profile?.target_exams) ? profile.target_exams : [],
+    daily_goal: typeof profile?.daily_goal === "number" ? profile.daily_goal : 10,
+  };
+}
+
 function ProfileScreen() {
-  const { user, profile, refreshProfile, signOut } = useAuth();
+  const { user, profile, updateProfile, signOut } = useAuth();
+  const fileInputRef = useRef(null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
+  const [imageLoading, setImageLoading] = useState(false);
+  const [form, setForm] = useState(buildForm(profile));
 
-  const [form, setForm] = useState({
-    username: profile?.username || "",
-    self_assessed_level: profile?.self_assessed_level || null,
-    target_exams: profile?.target_exams || [],
-    daily_goal: profile?.daily_goal || 10,
-  });
+  useEffect(() => {
+    if (!editing) setForm(buildForm(profile));
+  }, [profile, editing]);
+
+  const isComplete = Boolean(profile?.onboarding_completed);
+  const displayName = form.full_name || form.username || "Student";
+  const initials = useMemo(() => {
+    const source = displayName || user?.email || "S";
+    return source
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((chunk) => chunk[0]?.toUpperCase() || "")
+      .join("");
+  }, [displayName, user?.email]);
 
   function toggleExam(exam) {
     setForm((prev) => ({
@@ -35,157 +97,294 @@ function ProfileScreen() {
     }));
   }
 
+  function startEditing() {
+    setError("");
+    setSaved(false);
+    setEditing(true);
+  }
+
+  function cancelEditing() {
+    setError("");
+    setForm(buildForm(profile));
+    setEditing(false);
+  }
+
   async function handleSave() {
     setSaving(true);
+    setError("");
     try {
-      const { error } = await supabase.from("profiles").upsert({
-        id: user.id, ...form, onboarding_completed: true,
+      await updateProfile({
+        ...form,
+        website: normalizeWebsite(form.website),
+        onboarding_completed: true,
       });
-      if (error) throw error;
-      await refreshProfile();
       setEditing(false);
       setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
+      setTimeout(() => setSaved(false), 2500);
     } catch (err) {
-      console.error(err.message);
+      setError(err?.message || "Could not save your profile. Please try again.");
     } finally {
       setSaving(false);
     }
   }
 
-  const isComplete = profile?.onboarding_completed;
-  const initials = form.username ? form.username[0].toUpperCase() : "?";
+  async function handleAvatarFileChange(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("Please choose an image file.");
+      return;
+    }
+    setImageLoading(true);
+    setError("");
+    try {
+      const dataUrl = await toCompressedAvatarDataUrl(file);
+      setForm((prev) => ({ ...prev, avatar_url: dataUrl }));
+    } catch (err) {
+      setError(err?.message || "Could not process image.");
+    } finally {
+      setImageLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-base px-5 pt-8 pb-24 flex flex-col gap-4">
+    <div className="tt-page">
+      <div className="tt-shell pt-5">
+        <section className="tt-panel p-4 sm:p-5">
+          <div className="flex items-start gap-4">
+            {form.avatar_url ? (
+              <img
+                src={form.avatar_url}
+                alt="Profile"
+                className="h-16 w-16 rounded-full border border-border/70 object-cover"
+              />
+            ) : (
+              <div className="flex h-16 w-16 items-center justify-center rounded-full border border-border/70 bg-card/75 text-[20px] font-bold text-text-primary">
+                {initials || "S"}
+              </div>
+            )}
 
-      {/* Header card */}
-      <div className="bg-elevated border border-border rounded-2xl p-5 flex items-center gap-4">
-        <div className="w-14 h-14 rounded-full bg-teal flex items-center justify-center text-[22px] font-bold font-body text-base flex-shrink-0">
-          {initials}
-        </div>
-        <div>
-          <h1 className="font-body font-bold text-[20px] text-text-primary">{profile?.username || "Your Profile"}</h1>
-          <p className="font-body text-[13px] text-text-secondary">{user?.email}</p>
-        </div>
-      </div>
+            <div className="min-w-0 flex-1">
+              <h1 className="truncate font-body text-[24px] font-bold text-text-primary">
+                {profile?.full_name || profile?.username || "Your Profile"}
+              </h1>
+              <p className="truncate text-[13px] text-text-secondary">{user?.email}</p>
+              {profile?.bio && (
+                <p className="mt-2 line-clamp-2 text-[13px] leading-relaxed text-text-secondary">
+                  {profile.bio}
+                </p>
+              )}
+            </div>
 
-      {/* Incomplete banner */}
-      {!isComplete && !editing && (
-        <div className="bg-teal/10 border border-teal/20 rounded-2xl px-5 py-4 flex justify-between items-center gap-3">
-          <div>
-            <p className="font-body font-bold text-[15px] text-text-primary mb-0.5">🎯 Complete your profile</p>
-            <p className="font-body text-[13px] text-text-secondary">Help us personalise your experience</p>
+            {!editing && (
+              <button type="button" onClick={startEditing} className="tt-cta whitespace-nowrap px-4 py-2 text-[13px]">
+                Edit Profile
+              </button>
+            )}
           </div>
-          <button onClick={() => setEditing(true)}
-            className="bg-teal text-base border-none rounded-xl px-4 py-2.5 font-body font-bold text-[14px] cursor-pointer whitespace-nowrap">
-            Set up →
-          </button>
-        </div>
-      )}
+        </section>
 
-      {saved && (
-        <div className="bg-success-bg border border-success/30 rounded-xl px-4 py-3 font-body text-[14px] font-semibold text-success">
-          ✅ Profile saved successfully!
-        </div>
-      )}
-
-      {/* Profile section */}
-      <div className="bg-elevated border border-border rounded-2xl p-5 flex flex-col gap-4">
-        <div className="flex justify-between items-center">
-          <h2 className="font-body font-bold text-[17px] text-text-primary">My Profile</h2>
-          {!editing && (
-            <button onClick={() => setEditing(true)}
-              className="bg-transparent border border-teal text-teal rounded-lg px-4 py-1.5 font-body font-semibold text-[13px] cursor-pointer">
-              Edit
-            </button>
-          )}
-        </div>
-
-        {/* Username */}
-        <Field label="Username">
-          {editing ? (
-            <input value={form.username} maxLength={30} placeholder="Enter username"
-              onChange={(e) => setForm((p) => ({ ...p, username: e.target.value }))}
-              className="w-full px-4 py-3 rounded-xl border border-border bg-card text-text-primary text-[15px] font-body outline-none focus:border-teal transition-colors" />
-          ) : (
-            <p className="font-body text-[15px] text-text-primary font-medium">{profile?.username || "—"}</p>
-          )}
-        </Field>
-
-        {/* Level */}
-        <Field label="English Level">
-          {editing ? (
-            <div className="flex flex-wrap gap-2">
-              {LEVELS.map((l) => (
-                <Chip key={l.value} active={form.self_assessed_level === l.value}
-                  onClick={() => setForm((p) => ({ ...p, self_assessed_level: l.value }))}>
-                  {l.label}
-                </Chip>
-              ))}
+        {!isComplete && !editing && (
+          <section className="tt-panel-soft mt-3 flex items-center justify-between gap-3 p-4">
+            <div>
+              <p className="text-[14px] font-bold text-text-primary">Complete your profile</p>
+              <p className="text-[12px] text-text-secondary">Set your goals and preferences for better practice recommendations.</p>
             </div>
-          ) : (
-            <p className="font-body text-[15px] text-text-primary font-medium">
-              {LEVELS.find((l) => l.value === profile?.self_assessed_level)?.label || "—"}
-            </p>
-          )}
-        </Field>
-
-        {/* Target exams */}
-        <Field label="Target Exams">
-          {editing ? (
-            <div className="flex flex-wrap gap-2">
-              {EXAMS.map((exam) => (
-                <Chip key={exam} active={form.target_exams.includes(exam)} onClick={() => toggleExam(exam)}>
-                  {exam}
-                </Chip>
-              ))}
-            </div>
-          ) : (
-            <p className="font-body text-[15px] text-text-primary font-medium">
-              {profile?.target_exams?.length > 0 ? profile.target_exams.join(", ") : "—"}
-            </p>
-          )}
-        </Field>
-
-        {/* Daily goal */}
-        <Field label="Daily Goal">
-          {editing ? (
-            <div className="flex flex-wrap gap-2">
-              {GOALS.map((g) => (
-                <Chip key={g} active={form.daily_goal === g}
-                  onClick={() => setForm((p) => ({ ...p, daily_goal: g }))}>
-                  {g} questions
-                </Chip>
-              ))}
-            </div>
-          ) : (
-            <p className="font-body text-[15px] text-text-primary font-medium">
-              {profile?.daily_goal ? `${profile.daily_goal} questions/day` : "—"}
-            </p>
-          )}
-        </Field>
-
-        {editing && (
-          <div className="flex gap-2.5 mt-1">
-            <button onClick={() => setEditing(false)}
-              className="flex-1 py-3 bg-transparent border border-border text-text-secondary rounded-xl font-body font-semibold text-[14px] cursor-pointer">
-              Cancel
+            <button type="button" onClick={startEditing} className="tt-cta px-4 py-2 text-[13px]">
+              Set Up
             </button>
-            <button onClick={handleSave} disabled={saving}
-              className={`flex-[2] py-3 bg-teal text-base border-none rounded-xl font-body font-bold text-[14px] cursor-pointer transition-opacity ${saving ? "opacity-60" : "opacity-100"}`}>
-              {saving ? "Saving..." : "Save Profile"}
-            </button>
+          </section>
+        )}
+
+        {saved && (
+          <div className="tt-panel-soft mt-3 border-success/35 bg-success/15 p-3 text-[13px] font-semibold text-success">
+            Profile saved successfully.
           </div>
         )}
-      </div>
 
-      {/* Sign out */}
-      <div className="bg-elevated border border-border rounded-2xl p-4">
-        <button onClick={signOut}
-          className="w-full py-3.5 bg-transparent border border-danger/40 text-danger rounded-xl font-body font-semibold text-[15px] cursor-pointer hover:bg-danger-bg transition-colors">
-          Sign Out
-        </button>
+        {error && (
+          <div className="tt-panel-soft mt-3 border-danger/35 bg-danger/12 p-3 text-[13px] font-semibold text-danger">
+            {error}
+          </div>
+        )}
+
+        <section className="tt-panel mt-3 p-4 sm:p-5">
+          <div className="grid gap-3 md:grid-cols-2">
+            <Field label="Full Name">
+              <input
+                value={form.full_name}
+                disabled={!editing}
+                maxLength={60}
+                placeholder="Your full name"
+                onChange={(e) => setForm((p) => ({ ...p, full_name: e.target.value }))}
+                className="w-full rounded-xl border border-border/70 bg-card/65 px-3 py-2.5 text-[14px] text-text-primary outline-none transition-colors focus:border-border-strong disabled:opacity-80"
+              />
+            </Field>
+
+            <Field label="Username">
+              <input
+                value={form.username}
+                disabled={!editing}
+                maxLength={30}
+                placeholder="username"
+                onChange={(e) => setForm((p) => ({ ...p, username: e.target.value.replace(/\s+/g, "") }))}
+                className="w-full rounded-xl border border-border/70 bg-card/65 px-3 py-2.5 text-[14px] text-text-primary outline-none transition-colors focus:border-border-strong disabled:opacity-80"
+              />
+            </Field>
+
+            <Field label="Location">
+              <input
+                value={form.location}
+                disabled={!editing}
+                maxLength={80}
+                placeholder="City, Country"
+                onChange={(e) => setForm((p) => ({ ...p, location: e.target.value }))}
+                className="w-full rounded-xl border border-border/70 bg-card/65 px-3 py-2.5 text-[14px] text-text-primary outline-none transition-colors focus:border-border-strong disabled:opacity-80"
+              />
+            </Field>
+
+            <Field label="Website">
+              <input
+                value={form.website}
+                disabled={!editing}
+                maxLength={120}
+                placeholder="https://..."
+                onChange={(e) => setForm((p) => ({ ...p, website: e.target.value }))}
+                className="w-full rounded-xl border border-border/70 bg-card/65 px-3 py-2.5 text-[14px] text-text-primary outline-none transition-colors focus:border-border-strong disabled:opacity-80"
+              />
+            </Field>
+
+            <div className="md:col-span-2">
+              <Field label="Avatar URL">
+                <div className="flex flex-col gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      capture="user"
+                      onChange={handleAvatarFileChange}
+                      disabled={!editing || imageLoading}
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      disabled={!editing || imageLoading}
+                      onClick={() => fileInputRef.current?.click()}
+                      className="tt-cta px-3 py-2 text-[12px] disabled:cursor-default disabled:opacity-70"
+                    >
+                      {imageLoading ? "Processing..." : "Upload From Device"}
+                    </button>
+                    {editing && form.avatar_url && (
+                      <button
+                        type="button"
+                        onClick={() => setForm((p) => ({ ...p, avatar_url: "" }))}
+                        className="rounded-lg border border-border/70 bg-card/60 px-3 py-2 text-[12px] font-semibold text-text-secondary"
+                      >
+                        Remove Photo
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    value={form.avatar_url}
+                    disabled={!editing}
+                    maxLength={50000}
+                    placeholder="https://image-url"
+                    onChange={(e) => setForm((p) => ({ ...p, avatar_url: e.target.value }))}
+                    className="w-full rounded-xl border border-border/70 bg-card/65 px-3 py-2.5 text-[14px] text-text-primary outline-none transition-colors focus:border-border-strong disabled:opacity-80"
+                  />
+                </div>
+              </Field>
+            </div>
+
+            <div className="md:col-span-2">
+              <Field label="Bio">
+                <textarea
+                  rows={3}
+                  value={form.bio}
+                  disabled={!editing}
+                  maxLength={280}
+                  placeholder="Tell others about your goals and interests."
+                  onChange={(e) => setForm((p) => ({ ...p, bio: e.target.value }))}
+                  className="w-full resize-y rounded-xl border border-border/70 bg-card/65 px-3 py-2.5 text-[14px] text-text-primary outline-none transition-colors focus:border-border-strong disabled:opacity-80"
+                />
+              </Field>
+            </div>
+          </div>
+        </section>
+
+        <section className="tt-panel mt-3 p-4 sm:p-5">
+          <Field label="English Level">
+            <div className="flex flex-wrap gap-2">
+              {LEVELS.map((level) => (
+                <Chip
+                  key={level.value}
+                  active={form.self_assessed_level === level.value}
+                  disabled={!editing}
+                  onClick={() => editing && setForm((p) => ({ ...p, self_assessed_level: level.value }))}
+                >
+                  {level.label}
+                </Chip>
+              ))}
+            </div>
+          </Field>
+
+          <div className="mt-3">
+            <Field label="Target Exams">
+              <div className="flex flex-wrap gap-2">
+                {EXAMS.map((exam) => (
+                  <Chip
+                    key={exam}
+                    active={form.target_exams.includes(exam)}
+                    disabled={!editing}
+                    onClick={() => editing && toggleExam(exam)}
+                  >
+                    {exam}
+                  </Chip>
+                ))}
+              </div>
+            </Field>
+          </div>
+
+          <div className="mt-3">
+            <Field label="Daily Goal">
+              <div className="flex flex-wrap gap-2">
+                {GOALS.map((goal) => (
+                  <Chip
+                    key={goal}
+                    active={form.daily_goal === goal}
+                    disabled={!editing}
+                    onClick={() => editing && setForm((p) => ({ ...p, daily_goal: goal }))}
+                  >
+                    {goal} questions
+                  </Chip>
+                ))}
+              </div>
+            </Field>
+          </div>
+        </section>
+
+        {editing && (
+          <section className="mt-3 flex gap-2">
+            <button type="button" onClick={cancelEditing} className="tt-cta flex-1 bg-card/55 text-text-secondary hover:bg-card/75">
+              Cancel
+            </button>
+            <button type="button" disabled={saving} onClick={handleSave} className="tt-cta flex-[1.4]">
+              {saving ? "Saving..." : "Save Changes"}
+            </button>
+          </section>
+        )}
+
+        <section className="tt-panel-soft mb-6 mt-3 p-3">
+          <button
+            type="button"
+            onClick={signOut}
+            className="w-full rounded-xl border border-danger/35 bg-danger/12 px-4 py-3 text-[14px] font-semibold text-danger transition-colors hover:bg-danger/20"
+          >
+            Sign Out
+          </button>
+        </section>
       </div>
     </div>
   );
@@ -193,21 +392,25 @@ function ProfileScreen() {
 
 function Field({ label, children }) {
   return (
-    <div className="flex flex-col gap-2">
-      <label className="font-body font-semibold text-[12px] text-text-tertiary uppercase tracking-wider">{label}</label>
+    <div className="flex flex-col gap-1.5">
+      <label className="text-[11px] font-semibold uppercase tracking-wide text-text-tertiary">{label}</label>
       {children}
     </div>
   );
 }
 
-function Chip({ active, onClick, children }) {
+function Chip({ active, disabled, onClick, children }) {
   return (
-    <button onClick={onClick}
-      className={`px-3.5 py-2 rounded-full border font-body font-medium text-[13px] cursor-pointer transition-all duration-150 ${
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={`rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors disabled:cursor-default disabled:opacity-70 ${
         active
-          ? "border-teal bg-teal/10 text-teal font-semibold"
-          : "border-border bg-transparent text-text-secondary hover:border-border-strong"
-      }`}>
+          ? "border-border-strong bg-card/90 text-text-primary"
+          : "border-border/70 bg-card/50 text-text-secondary hover:border-border-strong"
+      }`}
+    >
       {children}
     </button>
   );
