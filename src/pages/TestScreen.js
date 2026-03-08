@@ -1,25 +1,25 @@
 // src/pages/TestScreen.js
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
-import { theme } from "../styles/theme";
 import { useAuth } from "../context/AuthContext";
+import { theme } from "../styles/theme";
 
 const { colors, fonts } = theme;
 
 function TestScreen() {
-  const { user } = useAuth();
   const { examId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [exam, setExam] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedOption, setSelectedOption] = useState(null);
-  const [hasSubmitted, setHasSubmitted] = useState(false);
-  const [answers, setAnswers] = useState([]);
+  const [answers, setAnswers] = useState({});
+  const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchExamAndQuestions();
@@ -33,21 +33,17 @@ function TestScreen() {
         .eq("id", examId)
         .single();
       if (examError) throw examError;
+      setExam(examData);
 
       const { data: questionsData, error: questionsError } = await supabase
         .from("questions")
         .select("*")
         .eq("exam_id", examId);
 
-      // Shuffle the questions randomly on every attempt
-      if (questionsData) {
-        questionsData.sort(() => Math.random() - 0.5);
-      }
       if (questionsError) throw questionsError;
-      if (questionsData.length === 0)
-        throw new Error("No questions found for this exam.");
 
-      setExam(examData);
+      // Shuffle
+      questionsData.sort(() => Math.random() - 0.5);
       setQuestions(questionsData);
     } catch (err) {
       setError(err.message);
@@ -56,268 +52,571 @@ function TestScreen() {
     }
   }
 
-  function handleOptionSelect(option) {
-    if (hasSubmitted) return;
-    setSelectedOption(option);
+  const currentQuestion = questions[currentIndex];
+  const isLastQuestion = currentIndex === questions.length - 1;
+  const hasAnswer = answers[currentIndex] !== undefined;
+
+  function handleAnswer(value) {
+    if (submitted) return;
+    setAnswers((prev) => ({ ...prev, [currentIndex]: value }));
   }
 
   function handleSubmit() {
-    if (!selectedOption) return;
-    setHasSubmitted(true);
-  }
-
-  // saveResults is its own function — NOT inside handleNext
-  async function saveResults(completedAnswers) {
-    try {
-      const rows = completedAnswers.map((answer) => ({
-        user_id: user.id,
-        question_id: answer.question.id,
-        exam_id: exam.id,
-        selected_option: answer.selectedOption,
-        is_correct: answer.isCorrect,
-      }));
-
-      const { error: resultsError } = await supabase
-        .from("user_results")
-        .insert(rows);
-      if (resultsError) throw resultsError;
-
-      const correctCount = completedAnswers.filter((a) => a.isCorrect).length;
-      const scorePercent = Math.round(
-        (correctCount / completedAnswers.length) * 100
-      );
-
-      const { error: sessionError } = await supabase
-        .from("test_sessions")
-        .insert({
-          user_id: user.id,
-          exam_id: exam.id,
-          score_percent: scorePercent,
-          correct_count: correctCount,
-          total_count: completedAnswers.length,
-        });
-      if (sessionError) throw sessionError;
-    } catch (err) {
-      console.error("Failed to save results:", err.message);
-    }
+    if (!hasAnswer) return;
+    setSubmitted(true);
   }
 
   async function handleNext() {
-    const currentQuestion = questions[currentIndex];
-    const isCorrect = selectedOption === currentQuestion.correct_option;
-
-    const updatedAnswers = [
-      ...answers,
-      { question: currentQuestion, selectedOption, isCorrect },
-    ];
-    setAnswers(updatedAnswers);
-
-    if (currentIndex === questions.length - 1) {
-      await saveResults(updatedAnswers);
-      navigate("/report", { state: { answers: updatedAnswers, exam } });
-      return;
+    await saveResult();
+    if (isLastQuestion) {
+      await saveSession();
+      navigate("/report", { state: { answers, questions, exam } });
+    } else {
+      setCurrentIndex((prev) => prev + 1);
+      setSubmitted(false);
     }
-
-    setCurrentIndex(currentIndex + 1);
-    setSelectedOption(null);
-    setHasSubmitted(false);
   }
 
-  if (loading)
-    return (
-      <div style={styles.loadingScreen}>
-        <p style={styles.loadingText}>Loading questions...</p>
-      </div>
-    );
-
-  if (error)
-    return (
-      <div style={styles.loadingScreen}>
-        <p style={{ color: colors.danger }}>{error}</p>
-      </div>
-    );
-
-  const currentQuestion = questions[currentIndex];
-  const isCorrect = selectedOption === currentQuestion.correct_option;
-  const progressPercent = ((currentIndex + 1) / questions.length) * 100;
-
-  const options = [
-    { key: "a", text: currentQuestion.option_a },
-    { key: "b", text: currentQuestion.option_b },
-    { key: "c", text: currentQuestion.option_c },
-    { key: "d", text: currentQuestion.option_d },
-  ];
-
-  function getOptionStyle(key) {
-    if (!hasSubmitted) {
-      return key === selectedOption ? styles.optionSelected : styles.option;
+  async function saveResult() {
+    if (!user || !currentQuestion) return;
+    const userAnswer = answers[currentIndex];
+    const isCorrect = checkCorrect(currentQuestion, userAnswer);
+    try {
+      await supabase.from("user_results").insert({
+        user_id: user.id,
+        question_id: currentQuestion.id,
+        exam_id: examId,
+        selected_option: String(userAnswer),
+        is_correct: isCorrect,
+      });
+    } catch (err) {
+      console.error("Save result error:", err.message);
     }
-    if (key === currentQuestion.correct_option) return styles.optionCorrect;
-    if (key === selectedOption) return styles.optionWrong;
-    return styles.option;
   }
+
+  async function saveSession() {
+    if (!user) return;
+    setSaving(true);
+    try {
+      const total = questions.length;
+      const correct = questions.filter(
+        (q, i) => answers[i] !== undefined && checkCorrect(q, answers[i])
+      ).length;
+      await supabase.from("test_sessions").insert({
+        user_id: user.id,
+        exam_id: examId,
+        score_percent: Math.round((correct / total) * 100),
+        correct_count: correct,
+        total_count: total,
+      });
+    } catch (err) {
+      console.error("Save session error:", err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function checkCorrect(question, answer) {
+    if (!question || answer === undefined) return false;
+    switch (question.question_type) {
+      case "mcq":
+      case "reading":
+        return answer === question.correct_option;
+      case "tfng":
+        return answer === question.tfng_answer;
+      case "fill_blank":
+        return (
+          String(answer).trim().toLowerCase() ===
+          String(question.blank_answer).trim().toLowerCase()
+        );
+      default:
+        return answer === question.correct_option;
+    }
+  }
+
+  function getCorrectLabel(question) {
+    switch (question.question_type) {
+      case "mcq":
+      case "reading":
+        return `${question.correct_option.toUpperCase()} — ${question[`option_${question.correct_option}`]}`;
+      case "tfng":
+        return question.tfng_answer.replace("_", " ").toUpperCase();
+      case "fill_blank":
+        return question.blank_answer;
+      default:
+        return question.correct_option;
+    }
+  }
+
+  if (loading) return <LoadingScreen />;
+  if (error) return <ErrorScreen error={error} />;
+  if (questions.length === 0)
+    return <EmptyScreen exam={exam} navigate={navigate} />;
+
+  const progress = ((currentIndex + 1) / questions.length) * 100;
+  const isCorrect =
+    submitted && checkCorrect(currentQuestion, answers[currentIndex]);
 
   return (
     <div style={styles.page}>
-      {/* ── Progress bar ── */}
-      <div style={styles.progressTrack}>
-        <div style={{ ...styles.progressFill, width: `${progressPercent}%` }} />
-      </div>
-
-      {/* ── Exam header ── */}
-      <div style={styles.testHeader}>
-        <span style={styles.examLabel}>{exam.name}</span>
-        <span style={styles.progressLabel}>
-          {currentIndex + 1} / {questions.length}
-        </span>
-      </div>
-
-      {/* ── Question card ── */}
-      <div style={styles.container}>
-        <div style={styles.card}>
-          <div style={styles.metaRow}>
-            <span style={styles.metaTag}>{currentQuestion.topic}</span>
-            <span style={styles.metaTag}>{currentQuestion.difficulty}</span>
-          </div>
-
-          <h2 style={styles.questionText}>{currentQuestion.question_text}</h2>
-
-          <div style={styles.optionsGrid}>
-            {options.map((opt) => (
-              <button
-                key={opt.key}
-                style={getOptionStyle(opt.key)}
-                onClick={() => handleOptionSelect(opt.key)}
-              >
-                <span style={styles.optionBadge}>{opt.key.toUpperCase()}</span>
-                <span style={styles.optionText}>{opt.text}</span>
-              </button>
-            ))}
-          </div>
-
-          {hasSubmitted && (
-            <div
-              style={
-                isCorrect ? styles.explanationCorrect : styles.explanationWrong
-              }
-            >
-              <p style={styles.resultLabel}>
-                {isCorrect
-                  ? "✅ Correct!"
-                  : `❌ Correct answer: ${currentQuestion.correct_option.toUpperCase()}`}
-              </p>
-              <p style={styles.explanationText}>
-                {currentQuestion.explanation}
-              </p>
-            </div>
-          )}
-
-          {!hasSubmitted ? (
-            <button
-              style={{
-                ...styles.actionButton,
-                opacity: selectedOption ? 1 : 0.35,
-              }}
-              onClick={handleSubmit}
-              disabled={!selectedOption}
-            >
-              Submit Answer
-            </button>
-          ) : (
-            <button style={styles.actionButton} onClick={handleNext}>
-              {currentIndex === questions.length - 1
-                ? "See My Results →"
-                : "Next Question →"}
-            </button>
-          )}
+      {/* Header */}
+      <div style={styles.header}>
+        <button style={styles.backBtn} onClick={() => navigate("/")}>
+          ✕
+        </button>
+        <div style={styles.headerCenter}>
+          <span style={styles.examName}>{exam?.name}</span>
+          <span style={styles.questionCount}>
+            {currentIndex + 1} / {questions.length}
+          </span>
         </div>
+        <div style={styles.headerRight} />
+      </div>
+
+      {/* Progress bar */}
+      <div style={styles.progressTrack}>
+        <div style={{ ...styles.progressFill, width: `${progress}%` }} />
+      </div>
+
+      {/* Question type badge */}
+      <div style={styles.typeBadgeRow}>
+        <span style={styles.typeBadge}>
+          {getTypeLabel(currentQuestion?.question_type)}
+        </span>
+        {currentQuestion?.topic && (
+          <span style={styles.topicBadge}>{currentQuestion.topic}</span>
+        )}
+      </div>
+
+      {/* Question content */}
+      <div style={styles.content}>
+        {/* Reading passage */}
+        {currentQuestion?.passage_text && (
+          <div style={styles.passage}>
+            {currentQuestion.passage_title && (
+              <div style={styles.passageTitle}>
+                {currentQuestion.passage_title}
+              </div>
+            )}
+            <p style={styles.passageText}>{currentQuestion.passage_text}</p>
+          </div>
+        )}
+
+        {/* Question text */}
+        <div style={styles.questionBox}>
+          <p style={styles.questionText}>
+            {formatQuestionText(currentQuestion?.question_text)}
+          </p>
+        </div>
+
+        {/* Answer input — switches based on type */}
+        {currentQuestion?.question_type === "fill_blank" ? (
+          <FillBlankInput
+            value={answers[currentIndex] || ""}
+            onChange={handleAnswer}
+            submitted={submitted}
+            isCorrect={isCorrect}
+            disabled={submitted}
+          />
+        ) : currentQuestion?.question_type === "tfng" ? (
+          <TFNGInput
+            value={answers[currentIndex]}
+            onChange={handleAnswer}
+            submitted={submitted}
+            isCorrect={isCorrect}
+            correct={currentQuestion?.tfng_answer}
+            disabled={submitted}
+          />
+        ) : (
+          <MCQInput
+            question={currentQuestion}
+            value={answers[currentIndex]}
+            onChange={handleAnswer}
+            submitted={submitted}
+            isCorrect={isCorrect}
+            disabled={submitted}
+          />
+        )}
+
+        {/* Feedback */}
+        {submitted && (
+          <div
+            style={isCorrect ? styles.feedbackCorrect : styles.feedbackWrong}
+          >
+            <div style={styles.feedbackHeader}>
+              {isCorrect
+                ? "✅ Correct!"
+                : `❌ Incorrect — ${getCorrectLabel(currentQuestion)}`}
+            </div>
+            {currentQuestion.explanation && (
+              <p style={styles.explanation}>{currentQuestion.explanation}</p>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Bottom action */}
+      <div style={styles.footer}>
+        {!submitted ? (
+          <button
+            style={{ ...styles.primaryBtn, opacity: hasAnswer ? 1 : 0.35 }}
+            onClick={handleSubmit}
+            disabled={!hasAnswer}
+          >
+            Submit Answer
+          </button>
+        ) : (
+          <button
+            style={{ ...styles.primaryBtn, opacity: saving ? 0.6 : 1 }}
+            onClick={handleNext}
+            disabled={saving}
+          >
+            {saving
+              ? "Saving..."
+              : isLastQuestion
+                ? "See Results →"
+                : "Next Question →"}
+          </button>
+        )}
       </div>
     </div>
   );
 }
 
+// ── Sub-components ──────────────────────────────────────────
+
+function MCQInput({
+  question,
+  value,
+  onChange,
+  submitted,
+  isCorrect,
+  disabled,
+}) {
+  const options = ["a", "b", "c", "d"];
+  return (
+    <div style={styles.optionList}>
+      {options.map((opt) => {
+        const text = question[`option_${opt}`];
+        if (!text) return null;
+        const selected = value === opt;
+        const isCorrectOpt = submitted && opt === question.correct_option;
+        const isWrongOpt = submitted && selected && !isCorrect;
+
+        let bgColor = colors.white;
+        let borderColor = colors.border;
+        let textColor = colors.textPrimary;
+
+        if (isCorrectOpt) {
+          bgColor = colors.successLight;
+          borderColor = colors.success;
+          textColor = colors.success;
+        } else if (isWrongOpt) {
+          bgColor = colors.dangerLight;
+          borderColor = colors.danger;
+          textColor = colors.danger;
+        } else if (selected && !submitted) {
+          bgColor = colors.tealLight;
+          borderColor = colors.teal;
+          textColor = colors.teal;
+        }
+
+        return (
+          <button
+            key={opt}
+            style={{
+              ...styles.option,
+              backgroundColor: bgColor,
+              borderColor,
+              color: textColor,
+            }}
+            onClick={() => !disabled && onChange(opt)}
+            disabled={disabled}
+          >
+            <span
+              style={{ ...styles.optionLetter, borderColor, color: textColor }}
+            >
+              {opt.toUpperCase()}
+            </span>
+            <span style={styles.optionText}>{text}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function TFNGInput({ value, onChange, submitted, correct, disabled }) {
+  const options = [
+    { value: "true", label: "True", emoji: "✓" },
+    { value: "false", label: "False", emoji: "✗" },
+    { value: "not_given", label: "Not Given", emoji: "?" },
+  ];
+  return (
+    <div style={styles.tfngRow}>
+      {options.map((opt) => {
+        const selected = value === opt.value;
+        const isCorrectOpt = submitted && opt.value === correct;
+        const isWrongOpt = submitted && selected && opt.value !== correct;
+
+        let bgColor = colors.white;
+        let borderColor = colors.border;
+        let textColor = colors.textPrimary;
+
+        if (isCorrectOpt) {
+          bgColor = colors.successLight;
+          borderColor = colors.success;
+          textColor = colors.success;
+        } else if (isWrongOpt) {
+          bgColor = colors.dangerLight;
+          borderColor = colors.danger;
+          textColor = colors.danger;
+        } else if (selected && !submitted) {
+          bgColor = colors.tealLight;
+          borderColor = colors.teal;
+          textColor = colors.teal;
+        }
+
+        return (
+          <button
+            key={opt.value}
+            style={{
+              ...styles.tfngBtn,
+              backgroundColor: bgColor,
+              borderColor,
+              color: textColor,
+            }}
+            onClick={() => !disabled && onChange(opt.value)}
+            disabled={disabled}
+          >
+            <span style={styles.tfngEmoji}>{opt.emoji}</span>
+            <span style={styles.tfngLabel}>{opt.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function FillBlankInput({ value, onChange, submitted, isCorrect, disabled }) {
+  return (
+    <div style={styles.fillBlankWrapper}>
+      <input
+        style={{
+          ...styles.fillBlankInput,
+          borderColor: submitted
+            ? isCorrect
+              ? colors.success
+              : colors.danger
+            : colors.border,
+          backgroundColor: submitted
+            ? isCorrect
+              ? colors.successLight
+              : colors.dangerLight
+            : colors.white,
+        }}
+        placeholder="Type your answer here..."
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
+        autoFocus
+      />
+    </div>
+  );
+}
+
+// ── Helpers ──────────────────────────────────────────────────
+
+function formatQuestionText(text) {
+  if (!text) return "";
+  // Highlight [BLANK] in fill-in-the-blank questions
+  if (text.includes("[BLANK]")) {
+    return text.split("[BLANK]").map((part, i, arr) => (
+      <React.Fragment key={i}>
+        {part}
+        {i < arr.length - 1 && (
+          <span style={styles.blankPlaceholder}>________</span>
+        )}
+      </React.Fragment>
+    ));
+  }
+  return text;
+}
+
+function getTypeLabel(type) {
+  switch (type) {
+    case "mcq":
+      return "Multiple Choice";
+    case "reading":
+      return "Reading";
+    case "tfng":
+      return "True / False / Not Given";
+    case "fill_blank":
+      return "Fill in the Blank";
+    default:
+      return "Multiple Choice";
+  }
+}
+
+// ── Utility screens ──────────────────────────────────────────
+
+function LoadingScreen() {
+  return (
+    <div style={styles.centeredScreen}>
+      <p style={styles.loadingText}>Loading questions...</p>
+    </div>
+  );
+}
+
+function ErrorScreen({ error }) {
+  return (
+    <div style={styles.centeredScreen}>
+      <p style={{ color: theme.colors.danger, fontFamily: theme.fonts.body }}>
+        Error: {error}
+      </p>
+    </div>
+  );
+}
+
+function EmptyScreen({ exam, navigate }) {
+  return (
+    <div style={styles.centeredScreen}>
+      <p style={styles.loadingText}>No questions yet for {exam?.name}.</p>
+      <button style={styles.primaryBtn} onClick={() => navigate("/")}>
+        Go Back
+      </button>
+    </div>
+  );
+}
+
+// ── Styles ────────────────────────────────────────────────────
+
 const styles = {
   page: {
     minHeight: "100vh",
-    backgroundColor: colors.offWhite,
+    backgroundColor: colors.white,
+    display: "flex",
+    flexDirection: "column",
+    maxWidth: "720px",
+    margin: "0 auto",
   },
-  loadingScreen: {
-    height: "100vh",
+  header: {
     display: "flex",
     alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.navy,
+    justifyContent: "space-between",
+    padding: "16px 20px",
+    borderBottom: `1px solid ${colors.border}`,
   },
-  loadingText: {
-    color: colors.gray300,
+  backBtn: {
+    background: "none",
+    border: "none",
+    fontSize: "18px",
+    cursor: "pointer",
+    color: colors.textSecondary,
+    padding: "4px 8px",
+    borderRadius: "6px",
+  },
+  headerCenter: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: "2px",
+  },
+  examName: {
     fontFamily: fonts.body,
-    fontSize: "16px",
+    fontWeight: "700",
+    fontSize: "15px",
+    color: colors.textPrimary,
   },
+  questionCount: {
+    fontFamily: fonts.body,
+    fontSize: "12px",
+    color: colors.textSecondary,
+  },
+  headerRight: { width: "40px" },
   progressTrack: {
-    height: "4px",
-    backgroundColor: colors.gray100,
+    height: "3px",
+    backgroundColor: colors.border,
   },
   progressFill: {
-    height: "4px",
+    height: "3px",
     backgroundColor: colors.teal,
     transition: "width 0.4s ease",
   },
-  testHeader: {
+  typeBadgeRow: {
     display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "12px 24px",
-    backgroundColor: colors.white,
-    borderBottom: `1px solid ${colors.gray100}`,
+    gap: "8px",
+    padding: "16px 20px 0",
+    flexWrap: "wrap",
   },
-  examLabel: {
-    fontFamily: fonts.heading,
-    fontSize: "20px",
-    color: colors.navy,
-    letterSpacing: "1px",
-  },
-  progressLabel: {
+  typeBadge: {
     fontFamily: fonts.body,
-    fontSize: "13px",
-    color: colors.gray500,
+    fontSize: "11px",
+    fontWeight: "600",
+    color: colors.teal,
+    backgroundColor: colors.tealLight,
+    padding: "4px 10px",
+    borderRadius: "100px",
+    letterSpacing: "0.3px",
   },
-  container: {
-    maxWidth: "700px",
-    margin: "40px auto",
-    padding: "0 24px 60px",
+  topicBadge: {
+    fontFamily: fonts.body,
+    fontSize: "11px",
+    fontWeight: "500",
+    color: colors.textSecondary,
+    backgroundColor: colors.surface,
+    padding: "4px 10px",
+    borderRadius: "100px",
+    border: `1px solid ${colors.border}`,
   },
-  card: {
-    backgroundColor: colors.white,
-    borderRadius: "20px",
-    padding: "36px",
-    boxShadow: "0 4px 24px rgba(0,0,0,0.07)",
+  content: {
+    flex: 1,
+    padding: "20px",
     display: "flex",
     flexDirection: "column",
     gap: "20px",
+    overflowY: "auto",
   },
-  metaRow: {
-    display: "flex",
-    gap: "8px",
+  passage: {
+    backgroundColor: colors.surface,
+    borderRadius: "12px",
+    padding: "20px",
+    border: `1px solid ${colors.border}`,
+    maxHeight: "280px",
+    overflowY: "auto",
   },
-  metaTag: {
-    backgroundColor: colors.gray100,
-    color: colors.gray700,
-    fontSize: "12px",
-    fontWeight: "600",
-    padding: "4px 12px",
-    borderRadius: "100px",
+  passageTitle: {
     fontFamily: fonts.body,
+    fontWeight: "700",
+    fontSize: "14px",
+    color: colors.textPrimary,
+    marginBottom: "12px",
     textTransform: "uppercase",
     letterSpacing: "0.5px",
   },
+  passageText: {
+    fontFamily: fonts.body,
+    fontSize: "14px",
+    color: colors.textPrimary,
+    lineHeight: "1.8",
+  },
+  questionBox: {
+    padding: "4px 0",
+  },
   questionText: {
     fontFamily: fonts.body,
-    fontSize: "20px",
-    fontWeight: "600",
-    color: colors.navy,
-    lineHeight: "1.55",
+    fontWeight: "500",
+    fontSize: "17px",
+    color: colors.textPrimary,
+    lineHeight: "1.6",
   },
-  optionsGrid: {
+  blankPlaceholder: {
+    color: colors.teal,
+    fontWeight: "700",
+    borderBottom: `2px solid ${colors.teal}`,
+    padding: "0 4px",
+  },
+  optionList: {
     display: "flex",
     flexDirection: "column",
     gap: "10px",
@@ -325,112 +624,132 @@ const styles = {
   option: {
     display: "flex",
     alignItems: "center",
-    gap: "14px",
-    padding: "14px 18px",
+    gap: "12px",
+    padding: "14px 16px",
     borderRadius: "12px",
-    border: `2px solid ${colors.gray100}`,
-    backgroundColor: colors.offWhite,
+    border: "1.5px solid",
     cursor: "pointer",
     textAlign: "left",
     transition: "all 0.15s ease",
-    fontFamily: fonts.body,
+    backgroundColor: colors.white,
+    borderColor: colors.border,
   },
-  optionSelected: {
-    display: "flex",
-    alignItems: "center",
-    gap: "14px",
-    padding: "14px 18px",
-    borderRadius: "12px",
-    border: `2px solid ${colors.teal}`,
-    backgroundColor: colors.tealLight,
-    cursor: "pointer",
-    textAlign: "left",
-    fontFamily: fonts.body,
-  },
-  optionCorrect: {
-    display: "flex",
-    alignItems: "center",
-    gap: "14px",
-    padding: "14px 18px",
-    borderRadius: "12px",
-    border: `2px solid ${colors.success}`,
-    backgroundColor: colors.successLight,
-    cursor: "default",
-    textAlign: "left",
-    fontFamily: fonts.body,
-  },
-  optionWrong: {
-    display: "flex",
-    alignItems: "center",
-    gap: "14px",
-    padding: "14px 18px",
-    borderRadius: "12px",
-    border: `2px solid ${colors.danger}`,
-    backgroundColor: colors.dangerLight,
-    cursor: "default",
-    textAlign: "left",
-    fontFamily: fonts.body,
-  },
-  optionBadge: {
-    minWidth: "28px",
+  optionLetter: {
+    width: "28px",
     height: "28px",
-    borderRadius: "8px",
-    backgroundColor: colors.navy,
-    color: colors.white,
-    fontSize: "13px",
-    fontWeight: "700",
+    borderRadius: "50%",
+    border: "1.5px solid",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    fontFamily: fonts.body,
+    fontWeight: "700",
+    fontSize: "12px",
     flexShrink: 0,
   },
   optionText: {
-    fontSize: "15px",
-    color: colors.navy,
+    fontFamily: fonts.body,
+    fontSize: "14px",
+    fontWeight: "500",
     lineHeight: "1.4",
   },
-  explanationCorrect: {
-    borderRadius: "12px",
-    padding: "18px",
-    backgroundColor: colors.successLight,
-    borderLeft: `4px solid ${colors.success}`,
+  tfngRow: {
+    display: "flex",
+    gap: "10px",
+  },
+  tfngBtn: {
+    flex: 1,
     display: "flex",
     flexDirection: "column",
-    gap: "8px",
-  },
-  explanationWrong: {
+    alignItems: "center",
+    gap: "6px",
+    padding: "16px 12px",
     borderRadius: "12px",
-    padding: "18px",
-    backgroundColor: colors.dangerLight,
-    borderLeft: `4px solid ${colors.danger}`,
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
+    border: "1.5px solid",
+    cursor: "pointer",
+    transition: "all 0.15s ease",
   },
-  resultLabel: {
+  tfngEmoji: {
+    fontSize: "22px",
     fontWeight: "700",
-    fontSize: "15px",
-    color: colors.navy,
-    fontFamily: fonts.body,
   },
-  explanationText: {
+  tfngLabel: {
+    fontFamily: fonts.body,
+    fontWeight: "600",
+    fontSize: "13px",
+  },
+  fillBlankWrapper: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+  },
+  fillBlankInput: {
+    padding: "16px 18px",
+    borderRadius: "12px",
+    border: "1.5px solid",
+    fontSize: "16px",
+    fontFamily: fonts.body,
+    color: colors.textPrimary,
+    outline: "none",
+    transition: "border-color 0.15s ease",
+    width: "100%",
+  },
+  feedbackCorrect: {
+    backgroundColor: colors.successLight,
+    border: `1px solid ${colors.success}`,
+    borderRadius: "12px",
+    padding: "16px",
+  },
+  feedbackWrong: {
+    backgroundColor: colors.dangerLight,
+    border: `1px solid ${colors.danger}`,
+    borderRadius: "12px",
+    padding: "16px",
+  },
+  feedbackHeader: {
+    fontFamily: fonts.body,
+    fontWeight: "700",
     fontSize: "14px",
-    color: colors.gray700,
-    lineHeight: "1.65",
-    fontFamily: fonts.body,
+    color: colors.textPrimary,
+    marginBottom: "6px",
   },
-  actionButton: {
+  explanation: {
+    fontFamily: fonts.body,
+    fontSize: "13px",
+    color: colors.textSecondary,
+    lineHeight: "1.6",
+  },
+  footer: {
+    padding: "16px 20px",
+    borderTop: `1px solid ${colors.border}`,
+    backgroundColor: colors.white,
+  },
+  primaryBtn: {
     width: "100%",
     padding: "15px",
-    backgroundColor: colors.navy,
+    backgroundColor: colors.teal,
     color: colors.white,
     border: "none",
     borderRadius: "12px",
-    fontSize: "16px",
-    fontWeight: "600",
+    fontSize: "15px",
+    fontWeight: "700",
     fontFamily: fonts.body,
     cursor: "pointer",
-    transition: "all 0.18s ease",
+    transition: "opacity 0.15s ease",
+  },
+  centeredScreen: {
+    minHeight: "100vh",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "16px",
+    padding: "24px",
+  },
+  loadingText: {
+    fontFamily: fonts.body,
+    fontSize: "15px",
+    color: colors.textSecondary,
   },
 };
 
