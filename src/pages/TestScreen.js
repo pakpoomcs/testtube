@@ -21,8 +21,8 @@ function TestScreen() {
   const [answers, setAnswers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-
-  useEffect(() => { fetchExamAndQuestions() }, [examId])
+  
+  useEffect(() => { fetchExamAndQuestions() }, [examId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function fetchExamAndQuestions() {
     try {

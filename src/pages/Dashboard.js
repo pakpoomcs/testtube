@@ -17,9 +17,10 @@ function Dashboard() {
   const [topicStats, setTopicStats] = useState([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetchDashboardData()
-  }, [])
+useEffect(() => {
+  fetchDashboardData()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [])
 
   async function fetchDashboardData() {
     try {

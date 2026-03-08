@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { theme } from '../styles/theme'
-import { useAuth } from '../context/AuthContext'
+// import { useAuth } from '../context/AuthContext'
 import NavBar from '../components/NavBar'
 
 
@@ -15,7 +15,7 @@ function ExamBrowser() {
   const [error, setError] = useState(null)
   const [filter, setFilter] = useState('All')
   const navigate = useNavigate()
-  const { } = useAuth()
+  // const { } = useAuth()
 
   useEffect(() => { fetchExams() }, [])
 

@@ -48,16 +48,15 @@ function AdminPage() {
     is_premium: false,
   })
 
-  useEffect(() => {
-    // Redirect non-admins immediately
-    if (!isAdmin) {
-      navigate('/')
-      return
-    }
-    fetchExams()
-  }, [isAdmin])
+useEffect(() => {
+  if (!isAdmin) {
+    navigate('/')
+    return
+  }
+  fetchExams()
+}, [isAdmin, navigate])
 
-  useEffect(() => {
+useEffect(() => {
     if (selectedExam) fetchQuestions(selectedExam.id)
   }, [selectedExam])
 
