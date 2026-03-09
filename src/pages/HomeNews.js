@@ -3,6 +3,99 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../supabaseClient";
 
+/* ── Per-exam metadata & theme ── */
+
+const EXAM_META = {
+  IELTS: {
+    tag: "ACADEMIC",
+    desc: "Global standard for English proficiency",
+    badgeCls: "bg-emerald-500/20 border-emerald-400/40 text-emerald-300",
+    buttonCls: "from-rose-500 to-pink-500",
+    barCls: "bg-rose-400",
+    barText: "text-rose-400",
+    toggleCls: "border-cyan-400/50 bg-cyan-500/25 text-cyan-300",
+  },
+  SAT: {
+    tag: "US COLLEGE",
+    desc: "US college admissions examination",
+    badgeCls: "bg-blue-500/20 border-blue-400/40 text-blue-300",
+    buttonCls: "from-blue-500 to-indigo-500",
+    barCls: "bg-blue-400",
+    barText: "text-blue-400",
+    toggleCls: "border-cyan-400/50 bg-cyan-500/25 text-cyan-300",
+  },
+  TOEFL: {
+    tag: "UNIVERSITY",
+    desc: "Academic English for university entry",
+    badgeCls: "bg-purple-500/20 border-purple-400/40 text-purple-300",
+    buttonCls: "from-purple-500 to-violet-500",
+    barCls: "bg-purple-400",
+    barText: "text-purple-400",
+    toggleCls: "border-rose-400/50 bg-rose-500/25 text-rose-300",
+  },
+  TOEIC: {
+    tag: "WORKPLACE",
+    desc: "Professional English for career growth",
+    badgeCls: "bg-rose-500/20 border-rose-400/40 text-rose-300",
+    buttonCls: "from-teal-600 to-emerald-500",
+    barCls: "bg-teal-400",
+    barText: "text-teal-400",
+    toggleCls: "border-rose-400/50 bg-rose-500/25 text-rose-300",
+  },
+  DET: {
+    tag: "ONLINE",
+    desc: "Modern online English proficiency test",
+    badgeCls: "bg-emerald-500/20 border-emerald-400/40 text-emerald-300",
+    buttonCls: "from-rose-500 to-pink-500",
+    barCls: "bg-rose-400",
+    barText: "text-rose-400",
+    toggleCls: "border-cyan-400/50 bg-cyan-500/25 text-cyan-300",
+  },
+  GED: {
+    tag: "HIGH SCHOOL",
+    desc: "High school equivalency credential",
+    badgeCls: "bg-blue-500/20 border-blue-400/40 text-blue-300",
+    buttonCls: "from-blue-500 to-indigo-500",
+    barCls: "bg-blue-400",
+    barText: "text-blue-400",
+    toggleCls: "border-cyan-400/50 bg-cyan-500/25 text-cyan-300",
+  },
+  "O-NET": {
+    tag: "THAI NATIONAL",
+    desc: "\u0e2a\u0e2d\u0e1a\u0e27\u0e31\u0e14\u0e1c\u0e25\u0e01\u0e32\u0e23\u0e28\u0e36\u0e01\u0e29\u0e32\u0e23\u0e30\u0e14\u0e31\u0e1a\u0e0a\u0e32\u0e15\u0e34",
+    badgeCls: "bg-purple-500/20 border-purple-400/40 text-purple-300",
+    buttonCls: "from-purple-500 to-violet-500",
+    barCls: "bg-purple-400",
+    barText: "text-purple-400",
+    toggleCls: "border-rose-400/50 bg-rose-500/25 text-rose-300",
+  },
+  TCAS: {
+    tag: "UNIVERSITY ENTRY",
+    desc: "Thai university entrance system",
+    badgeCls: "bg-rose-500/20 border-rose-400/40 text-rose-300",
+    buttonCls: "from-rose-500 to-pink-500",
+    barCls: "bg-rose-400",
+    barText: "text-rose-400",
+    toggleCls: "border-rose-400/50 bg-rose-500/25 text-rose-300",
+  },
+};
+
+const DEFAULT_META = {
+  tag: "EXAM",
+  desc: "Practice test",
+  badgeCls: "bg-slate-500/20 border-slate-400/40 text-slate-300",
+  buttonCls: "from-slate-500 to-slate-600",
+  barCls: "bg-slate-400",
+  barText: "text-slate-400",
+  toggleCls: "border-cyan-400/50 bg-cyan-500/25 text-cyan-300",
+};
+
+function getMeta(name) {
+  return EXAM_META[String(name || "").trim().toUpperCase()] || EXAM_META[String(name || "").trim()] || DEFAULT_META;
+}
+
+/* ── News sources ── */
+
 const SOURCES = [
   { subreddit: "IELTS", label: "IELTS" },
   { subreddit: "SAT", label: "SAT" },
@@ -10,146 +103,35 @@ const SOURCES = [
   { subreddit: "education", label: "Education" },
 ];
 
-const FALLBACK_STORIES = [
-  {
-    id: "fallback-1",
-    title: "How Students Build Better Study Systems With Short Daily Reviews",
-    source: "Education Digest",
-    url: "https://www.edutopia.org/",
-    score: 0,
-    comments: 0,
-    createdAt: Date.now(),
-  },
-  {
-    id: "fallback-2",
-    title: "Exam Anxiety: Practical Strategies From Learning Science",
-    source: "Learning Research",
-    url: "https://www.apa.org/topics/learning-memory/study-techniques",
-    score: 0,
-    comments: 0,
-    createdAt: Date.now() - 1000 * 60 * 60,
-  },
-];
-
-const CARD_THEMES = {
-  IELTS: {
-    shell: "from-rose-500/26 via-rose-400/14 to-white/8",
-    border: "border-rose-300/40",
-    glow: "bg-rose-400/25",
-    badge: "bg-rose-500/20 border-rose-300/45 text-rose-100",
-    button: "border-rose-200/45 bg-rose-500/20 hover:bg-rose-500/28",
-    toggleOff: "border-rose-300/60 bg-rose-500/32 text-rose-50 hover:bg-rose-500/42",
-  },
-  DUOLINGO: {
-    shell: "from-emerald-500/26 via-emerald-400/14 to-white/8",
-    border: "border-emerald-300/40",
-    glow: "bg-emerald-400/25",
-    badge: "bg-emerald-500/20 border-emerald-300/45 text-emerald-100",
-    button: "border-emerald-200/45 bg-emerald-500/20 hover:bg-emerald-500/28",
-    toggleOff: "border-emerald-300/60 bg-emerald-500/32 text-emerald-50 hover:bg-emerald-500/42",
-  },
-  DET: {
-    shell: "from-emerald-500/26 via-emerald-400/14 to-white/8",
-    border: "border-emerald-300/40",
-    glow: "bg-emerald-400/25",
-    badge: "bg-emerald-500/20 border-emerald-300/45 text-emerald-100",
-    button: "border-emerald-200/45 bg-emerald-500/20 hover:bg-emerald-500/28",
-    toggleOff: "border-emerald-300/60 bg-emerald-500/32 text-emerald-50 hover:bg-emerald-500/42",
-  },
-  SAT: {
-    shell: "from-blue-500/26 via-blue-400/14 to-white/8",
-    border: "border-blue-300/40",
-    glow: "bg-blue-400/25",
-    badge: "bg-blue-500/20 border-blue-300/45 text-blue-100",
-    button: "border-blue-200/45 bg-blue-500/20 hover:bg-blue-500/28",
-    toggleOff: "border-blue-300/60 bg-blue-500/32 text-blue-50 hover:bg-blue-500/42",
-  },
-  TOEFL: {
-    shell: "from-amber-400/26 via-yellow-300/14 to-white/8",
-    border: "border-amber-200/45",
-    glow: "bg-amber-300/25",
-    badge: "bg-amber-400/20 border-amber-200/45 text-amber-100",
-    button: "border-amber-100/45 bg-amber-400/20 hover:bg-amber-400/28",
-    toggleOff: "border-amber-200/60 bg-amber-400/34 text-amber-50 hover:bg-amber-400/44",
-  },
-  GED: {
-    shell: "from-zinc-300/24 via-zinc-200/14 to-white/8",
-    border: "border-zinc-200/45",
-    glow: "bg-zinc-200/25",
-    badge: "bg-zinc-300/18 border-zinc-200/45 text-zinc-100",
-    button: "border-zinc-100/45 bg-zinc-300/16 hover:bg-zinc-300/24",
-    toggleOff: "border-zinc-200/60 bg-zinc-300/34 text-zinc-50 hover:bg-zinc-300/44",
-  },
+const NEWS_COLORS = {
+  IELTS: { border: "border-l-cyan-400", badge: "bg-cyan-500/18 text-cyan-300" },
+  SAT: { border: "border-l-blue-400", badge: "bg-blue-500/18 text-blue-300" },
+  College: { border: "border-l-violet-400", badge: "bg-violet-500/18 text-violet-300" },
+  Education: { border: "border-l-emerald-400", badge: "bg-emerald-500/18 text-emerald-300" },
 };
+const DEFAULT_NEWS = { border: "border-l-slate-400", badge: "bg-slate-500/18 text-slate-300" };
 
-const DEFAULT_THEME = {
-  shell: "from-slate-400/20 via-slate-300/12 to-white/8",
-  border: "border-border/70",
-  glow: "bg-white/15",
-  badge: "bg-card/55 border-border/70 text-text-secondary",
-  button: "border-border/70 bg-card/70 hover:bg-card/80",
-  toggleOff: "border-white/45 bg-white/30 text-white hover:bg-white/42",
-};
+/* ── Helpers ── */
 
 const DIFFICULTY_LEVELS = ["Easy", "Medium", "Hard"];
-const DAILY_LINES = [
-  "Small steps beat perfect plans. Do one set now.",
-  "Your future score is built by today's consistency.",
-  "If focus is low, do just 5 questions to start.",
-  "Progress loves routine. Even 10 minutes counts.",
-];
-
-function getDailyLine() {
-  const day = new Date().getDate();
-  return DAILY_LINES[day % DAILY_LINES.length];
-}
-
-function buildCoachReply(input, snapshot) {
-  const text = String(input || "").toLowerCase();
-  if (!text) return "Ask me anything about study strategy, test planning, or motivation.";
-  if (text.includes("plan") || text.includes("schedule")) {
-    return "Try this: 25 min practice, 5 min review, then one mistake log. Repeat twice.";
-  }
-  if (text.includes("score") || text.includes("improve")) {
-    return `Your current average is ${snapshot.avgScore}%. Focus on Medium first, then Hard for growth.`;
-  }
-  if (text.includes("motivat") || text.includes("tired") || text.includes("burnout")) {
-    return "Use the 5-minute rule: start tiny, then decide if you continue. Starting is the hard part.";
-  }
-  if (text.includes("ielts") || text.includes("toefl") || text.includes("toeic")) {
-    return "For English tests: alternate reading + vocabulary days and review wrong answers immediately.";
-  }
-  return "Good question. Prioritize one weak topic today, finish one timed set, then review every mistake.";
-}
 
 function toDifficultyParam(level) {
   return String(level || "").trim().toLowerCase();
 }
 
 function normalizeDifficulty(level) {
-  const value = String(level || "").trim().toLowerCase();
-  if (value === "easy") return "Easy";
-  if (value === "medium") return "Medium";
-  if (value === "hard") return "Hard";
+  const v = String(level || "").trim().toLowerCase();
+  if (v === "easy") return "Easy";
+  if (v === "medium") return "Medium";
+  if (v === "hard") return "Hard";
   return "";
 }
 
-function getTheme(name) {
-  const key = String(name || "").trim().toUpperCase();
-  return CARD_THEMES[key] || DEFAULT_THEME;
+function formatDate(ts) {
+  return new Date(ts).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
-function formatRelativeTime(ts) {
-  const diffMs = ts - Date.now();
-  const minute = 60 * 1000;
-  const hour = 60 * minute;
-  const day = 24 * hour;
-
-  const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
-  if (Math.abs(diffMs) < hour) return rtf.format(Math.round(diffMs / minute), "minute");
-  if (Math.abs(diffMs) < day) return rtf.format(Math.round(diffMs / hour), "hour");
-  return rtf.format(Math.round(diffMs / day), "day");
-}
+/* ── Component ── */
 
 function HomeNews() {
   const navigate = useNavigate();
@@ -157,7 +139,6 @@ function HomeNews() {
 
   const [stories, setStories] = useState([]);
   const [newsLoading, setNewsLoading] = useState(true);
-  const [newsError, setNewsError] = useState(null);
 
   const [exams, setExams] = useState([]);
   const [examLoading, setExamLoading] = useState(true);
@@ -166,23 +147,8 @@ function HomeNews() {
   const [examDifficultyFilters, setExamDifficultyFilters] = useState({});
   const [examQuestionStats, setExamQuestionStats] = useState({});
   const [examProgressStats, setExamProgressStats] = useState({});
-  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
-  const [pendingTestUrl, setPendingTestUrl] = useState("");
 
-  const [snapshot, setSnapshot] = useState({
-    testsTaken: 0,
-    avgScore: 0,
-    recentScore: null,
-  });
-  const [chatInput, setChatInput] = useState("");
-  const [dailyLine] = useState(() => getDailyLine());
-  const [chatMessages, setChatMessages] = useState([
-    {
-      id: "welcome",
-      role: "assistant",
-      text: "Hi, I am your study coach. Ask for a plan, motivation, or exam strategy.",
-    },
-  ]);
+  /* ── Data fetching ── */
 
   useEffect(() => {
     fetchStories();
@@ -192,10 +158,6 @@ function HomeNews() {
   useEffect(() => {
     if (user?.id) fetchExams();
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (user?.id) fetchSnapshot(user.id);
-  }, [user?.id]);
 
   async function fetchExams() {
     setExamLoading(true);
@@ -207,47 +169,42 @@ function HomeNews() {
         .order("name");
       if (error) throw error;
       const nextExams = data || [];
-      const examIds = nextExams.map((exam) => exam.id);
+      const examIds = nextExams.map((e) => e.id);
       let statsMap = {};
       let difficultyByQuestionId = {};
       if (examIds.length > 0) {
-        const { data: questionsData, error: questionsError } = await supabase
+        const { data: qData, error: qErr } = await supabase
           .from("questions")
           .select("id, exam_id, difficulty")
           .in("exam_id", examIds);
-        if (questionsError) throw questionsError;
-        statsMap = (questionsData || []).reduce((acc, row) => {
-          const examId = row.exam_id;
-          if (!acc[examId]) acc[examId] = { total: 0, byDifficulty: { Easy: 0, Medium: 0, Hard: 0 } };
-          const normalized = normalizeDifficulty(row.difficulty);
-          difficultyByQuestionId[row.id] = normalized;
-          acc[examId].total += 1;
-          if (normalized) acc[examId].byDifficulty[normalized] += 1;
+        if (qErr) throw qErr;
+        statsMap = (qData || []).reduce((acc, row) => {
+          if (!acc[row.exam_id]) acc[row.exam_id] = { total: 0, byDifficulty: { Easy: 0, Medium: 0, Hard: 0 } };
+          const norm = normalizeDifficulty(row.difficulty);
+          difficultyByQuestionId[row.id] = norm;
+          acc[row.exam_id].total += 1;
+          if (norm) acc[row.exam_id].byDifficulty[norm] += 1;
           return acc;
         }, {});
       }
       setExams(nextExams);
       setExamQuestionStats(statsMap);
       if (user?.id && examIds.length > 0) {
-        const { data: userResults, error: userResultsError } = await supabase
+        const { data: uData, error: uErr } = await supabase
           .from("user_results")
           .select("exam_id, question_id")
           .eq("user_id", user.id)
           .in("exam_id", examIds);
-        if (userResultsError) throw userResultsError;
-
-        const dedup = new Set();
-        const progressMap = (userResults || []).reduce((acc, row) => {
-          const dedupKey = `${row.exam_id}:${row.question_id}`;
-          if (dedup.has(dedupKey)) return acc;
-          dedup.add(dedupKey);
-
-          if (!acc[row.exam_id]) {
-            acc[row.exam_id] = { taken: 0, byDifficulty: { Easy: 0, Medium: 0, Hard: 0 } };
-          }
+        if (uErr) throw uErr;
+        const seen = new Set();
+        const progressMap = (uData || []).reduce((acc, row) => {
+          const key = `${row.exam_id}:${row.question_id}`;
+          if (seen.has(key)) return acc;
+          seen.add(key);
+          if (!acc[row.exam_id]) acc[row.exam_id] = { taken: 0, byDifficulty: { Easy: 0, Medium: 0, Hard: 0 } };
           acc[row.exam_id].taken += 1;
-          const diff = difficultyByQuestionId[row.question_id];
-          if (diff) acc[row.exam_id].byDifficulty[diff] += 1;
+          const d = difficultyByQuestionId[row.question_id];
+          if (d) acc[row.exam_id].byDifficulty[d] += 1;
           return acc;
         }, {});
         setExamProgressStats(progressMap);
@@ -256,12 +213,12 @@ function HomeNews() {
       }
       setExamDifficultyFilters((prev) => {
         const next = { ...prev };
-        nextExams.forEach((exam) => {
-          if (!next[exam.id] || next[exam.id].length === 0) next[exam.id] = [...DIFFICULTY_LEVELS];
+        nextExams.forEach((e) => {
+          if (!next[e.id] || next[e.id].length === 0) next[e.id] = [...DIFFICULTY_LEVELS];
         });
         return next;
       });
-    } catch (_err) {
+    } catch (_) {
       setExamError("Could not load tests right now.");
       setExams([]);
       setExamQuestionStats({});
@@ -273,470 +230,282 @@ function HomeNews() {
 
   async function fetchStories() {
     setNewsLoading(true);
-    setNewsError(null);
-
     try {
       const responses = await Promise.all(
         SOURCES.map(async ({ subreddit, label }) => {
-          const res = await fetch(`https://www.reddit.com/r/${subreddit}/hot.json?limit=8`);
-          if (!res.ok) throw new Error(`Failed to load r/${subreddit}`);
+          const res = await fetch(`https://www.reddit.com/r/${subreddit}/hot.json?limit=6`);
+          if (!res.ok) throw new Error(`r/${subreddit}`);
           const json = await res.json();
-
-          return (json.data?.children || []).map(({ data }) => ({
-            id: data.id,
-            title: data.title,
+          return (json.data?.children || []).map(({ data: d }) => ({
+            id: d.id,
+            title: d.title,
             source: label,
-            subreddit,
-            url:
-              data.url_overridden_by_dest ||
-              data.url ||
-              `https://www.reddit.com${data.permalink}`,
-            score: data.score || 0,
-            comments: data.num_comments || 0,
-            createdAt: (data.created_utc || 0) * 1000,
-            thumbnail:
-              typeof data.thumbnail === "string" &&
-              /^https?:\/\//.test(data.thumbnail)
-                ? data.thumbnail
-                : data.preview?.images?.[0]?.source?.url?.replace(/&amp;/g, "&") || null,
+            url: d.url_overridden_by_dest || d.url || `https://www.reddit.com${d.permalink}`,
+            createdAt: (d.created_utc || 0) * 1000,
           }));
         })
       );
-
-      const merged = responses.flat();
-      const deduped = Array.from(new Map(merged.map((item) => [item.id, item])).values());
-      deduped.sort((a, b) => b.createdAt - a.createdAt);
-      setStories(deduped.slice(0, 16));
-    } catch (_err) {
-      setNewsError("Live student news is unavailable right now. Showing fallback reading list.");
-      setStories(FALLBACK_STORIES);
+      const merged = Array.from(new Map(responses.flat().map((s) => [s.id, s])).values());
+      merged.sort((a, b) => b.createdAt - a.createdAt);
+      setStories(merged.slice(0, 12));
+    } catch (_) {
+      setStories([]);
     } finally {
       setNewsLoading(false);
     }
   }
 
-  async function fetchSnapshot(userId) {
-    try {
-      const { data, error } = await supabase
-        .from("test_sessions")
-        .select("score_percent, completed_at")
-        .eq("user_id", userId)
-        .order("completed_at", { ascending: false })
-        .limit(20);
-      if (error) throw error;
+  /* ── Derived state ── */
 
-      const testsTaken = data?.length || 0;
-      const avgScore =
-        testsTaken > 0
-          ? Math.round(data.reduce((sum, row) => sum + (row.score_percent || 0), 0) / testsTaken)
-          : 0;
-      const recentScore = testsTaken > 0 ? data[0].score_percent : null;
-
-      setSnapshot({ testsTaken, avgScore, recentScore });
-    } catch (_err) {
-      setSnapshot({ testsTaken: 0, avgScore: 0, recentScore: null });
-    }
-  }
-
-  const displayName = useMemo(() => {
-    const email = user?.email || "";
-    if (!email) return "Student";
-    return email.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-  }, [user?.email]);
-
-  const highlights = useMemo(() => stories.slice(0, 3), [stories]);
-  const feed = useMemo(() => stories.slice(3), [stories]);
-  const sourceCount = useMemo(
-    () => new Set(stories.map((story) => story.source)).size,
-    [stories]
-  );
   const examCategories = useMemo(() => ["All", ...new Set(exams.map((e) => e.category))], [exams]);
   const filteredExams = useMemo(
     () => (examFilter === "All" ? exams : exams.filter((e) => e.category === examFilter)),
     [examFilter, exams]
   );
+  const newsItems = useMemo(() => stories.slice(0, 3), [stories]);
 
-  function toggleExamDifficulty(examId, level) {
+  function toggleDifficulty(examId, level) {
     setExamDifficultyFilters((prev) => {
-      const current = prev[examId] || [...DIFFICULTY_LEVELS];
-      const hasLevel = current.includes(level);
-      if (hasLevel && current.length === 1) return prev;
-      const nextLevels = hasLevel ? current.filter((item) => item !== level) : [...current, level];
-      return { ...prev, [examId]: nextLevels };
+      const cur = prev[examId] || [...DIFFICULTY_LEVELS];
+      const has = cur.includes(level);
+      if (has && cur.length === 1) return prev;
+      return { ...prev, [examId]: has ? cur.filter((l) => l !== level) : [...cur, level] };
     });
   }
 
-  function getTestUrl(examId, selectedLevels) {
-    const values = (selectedLevels?.length ? selectedLevels : DIFFICULTY_LEVELS).map(toDifficultyParam);
-    return `/test/${examId}?difficulty=${values.join(",")}`;
+  function getTestUrl(examId, levels) {
+    const vals = (levels?.length ? levels : DIFFICULTY_LEVELS).map(toDifficultyParam);
+    return `/test/${examId}?difficulty=${vals.join(",")}`;
   }
 
-  function openTest(examId, selectedLevels) {
-    const url = getTestUrl(examId, selectedLevels);
-    if (!user) {
-      setPendingTestUrl(url);
-      setShowAuthPrompt(true);
-      return;
-    }
-    navigate(url);
-  }
-
-  function sendChatMessage() {
-    const message = chatInput.trim();
-    if (!message) return;
-    const userMsg = { id: `u-${Date.now()}`, role: "user", text: message };
-    const assistantMsg = {
-      id: `a-${Date.now() + 1}`,
-      role: "assistant",
-      text: buildCoachReply(message, snapshot),
-    };
-    setChatMessages((prev) => [...prev, userMsg, assistantMsg].slice(-8));
-    setChatInput("");
-  }
+  /* ── Render ── */
 
   return (
     <div className="tt-page">
-      <div className="tt-shell">
-        <section className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
-          <div className="tt-panel relative overflow-hidden p-3.5">
-            <span className="tt-pill inline-flex">Daily Brief</span>
-            <h1 className="mt-2 font-body text-[22px] font-semibold leading-tight text-text-primary">
-              Welcome back, {displayName}
-            </h1>
-            <p className="mt-1 text-[12px] text-text-secondary">{dailyLine}</p>
-            <div className="mt-3 grid grid-cols-3 gap-2">
-              <div className="tt-panel-soft p-2">
-                <p className="text-[10px] uppercase tracking-wide text-text-tertiary">Tests</p>
-                <p className="text-[16px] font-bold text-text-primary">{snapshot.testsTaken}</p>
-              </div>
-              <div className="tt-panel-soft p-2">
-                <p className="text-[10px] uppercase tracking-wide text-text-tertiary">Avg</p>
-                <p className="text-[16px] font-bold text-text-primary">{snapshot.avgScore}%</p>
-              </div>
-              <div className="tt-panel-soft p-2">
-                <p className="text-[10px] uppercase tracking-wide text-text-tertiary">Last</p>
-                <p className="text-[16px] font-bold text-text-primary">
-                  {snapshot.recentScore === null ? "—" : `${snapshot.recentScore}%`}
-                </p>
-              </div>
-            </div>
-            <div className="absolute -right-20 -top-20 h-[220px] w-[220px] rounded-full border border-border/25" />
-          </div>
+      <div className="mx-auto max-w-[980px] px-4 pt-4">
 
-          <div className="tt-panel p-3.5">
-            <div className="mb-2 flex items-center justify-between">
-              <p className="text-[12px] font-semibold uppercase tracking-wide text-text-tertiary">AI Study Coach</p>
-              <span className="text-[11px] text-text-secondary">Beta</span>
-            </div>
-            <div className="tt-panel-soft flex h-[116px] flex-col gap-1.5 overflow-y-auto p-2.5">
-              {chatMessages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`max-w-[92%] rounded-lg px-2.5 py-1.5 text-[12px] ${
-                    msg.role === "assistant"
-                      ? "self-start border border-border/60 bg-card/70 text-text-primary"
-                      : "self-end border border-cyan-200/30 bg-cyan-400/18 text-cyan-50"
-                  }`}
-                >
-                  {msg.text}
-                </div>
-              ))}
-            </div>
-            <div className="mt-2 flex gap-2">
-              <input
-                type="text"
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") sendChatMessage();
-                }}
-                placeholder="Ask for a study plan..."
-                className="w-full rounded-xl border border-border/70 bg-card/65 px-3 py-2 text-[13px] text-text-primary outline-none transition-colors focus:border-border-strong"
-              />
-              <button type="button" onClick={sendChatMessage} className="tt-cta px-3 py-2 text-[12px]">
-                Send
+        {/* ── Hero ── */}
+        <section className="tt-panel relative overflow-hidden px-6 py-8 sm:px-8 sm:py-10">
+          <div className="relative z-10">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-300/30 bg-cyan-400/12 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.8px] text-cyan-200">
+              <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="currentColor"><path d="M8 0l1.8 5.2H15l-4.2 3 1.6 5.2L8 10.5l-4.4 3 1.6-5.2-4.2-3h5.2z" /></svg>
+              AI-Powered Practice
+            </span>
+            <h1 className="mt-4 font-heading text-[clamp(34px,7vw,52px)] leading-[1.08] tracking-[0.5px] text-text-primary">
+              Master Your
+              <br />
+              <span className="text-cyan-400">Target Exam.</span>
+            </h1>
+            <p className="mt-3 max-w-[440px] font-body text-[14px] leading-relaxed text-text-secondary">
+              Personalised practice for IELTS, SAT, TCAS and 5 more standardised tests — designed for Thai students.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => document.getElementById("exam-grid")?.scrollIntoView({ behavior: "smooth" })}
+                className="flex items-center gap-2 rounded-xl border border-cyan-300/35 bg-cyan-500/18 px-5 py-3 font-body text-[14px] font-bold text-cyan-50 transition-colors hover:bg-cyan-500/28"
+              >
+                Start Now
+                <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 3l5 5-5 5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              </button>
+              <button
+                type="button"
+                className="rounded-xl border border-border/70 bg-card/50 px-5 py-3 font-body text-[14px] font-semibold text-text-primary transition-colors hover:bg-hover/40"
+              >
+                View Plans
               </button>
             </div>
           </div>
+          <div className="pointer-events-none absolute -right-16 -top-16 h-[300px] w-[300px] rounded-full border border-border/20" />
+          <div className="pointer-events-none absolute right-12 top-10 h-[180px] w-[180px] rounded-full border border-border/15" />
         </section>
 
-        <section className="mt-3">
-          <div className="mb-2.5 flex items-center justify-between">
-            <h3 className="font-body text-[16px] font-bold text-text-primary">Practice Tests</h3>
-            <button type="button" onClick={fetchExams} className="tt-cta px-4 py-2 text-[13px]">
-              Refresh
+        {/* ── Category filters ── */}
+        <div className="mt-4 flex flex-wrap gap-2">
+          {examCategories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setExamFilter(cat)}
+              className={`cursor-pointer rounded-full border px-4 py-1.5 font-body text-[12px] font-medium transition-all duration-150 ${
+                examFilter === cat
+                  ? "border-cyan-400/50 bg-cyan-500/15 font-semibold text-cyan-200"
+                  : "border-border/60 bg-card/40 text-text-secondary hover:border-border-strong hover:bg-card/60"
+              }`}
+            >
+              {cat}
             </button>
+          ))}
+        </div>
+
+        {/* ── Section header ── */}
+        <div id="exam-grid" className="mt-5 flex items-baseline justify-between">
+          <h2 className="font-body text-[18px] font-bold text-text-primary">All Exams</h2>
+          <span className="font-mono text-[13px] text-text-tertiary">
+            {filteredExams.length} available
+          </span>
+        </div>
+
+        {/* ── Exam grid ── */}
+        {examLoading ? (
+          <div className="mt-4 flex items-center justify-center py-12">
+            <div className="h-4 w-4 animate-pulse rounded-full bg-cyan-400" />
+            <span className="ml-3 font-body text-[14px] text-text-secondary">Loading exams...</span>
           </div>
-          <div className="mb-3 flex flex-wrap gap-2">
-            {examCategories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setExamFilter(cat)}
-                className={`cursor-pointer rounded-full border px-3.5 py-1.5 text-[12px] font-medium transition-all ${
-                  examFilter === cat
-                    ? "border-border-strong bg-card/85 text-text-primary"
-                    : "border-border/60 bg-card/45 text-text-secondary hover:border-border-strong"
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
+        ) : examError ? (
+          <div className="mt-4 tt-panel p-6 text-center text-danger">{examError}</div>
+        ) : (
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {filteredExams.map((exam) => {
+              const meta = getMeta(exam.name);
+              const selectedDiffs = examDifficultyFilters[exam.id] || DIFFICULTY_LEVELS;
+              const stats = examQuestionStats[exam.id];
+              const totalQ = stats?.total ?? (exam.questions?.[0]?.count ?? 0);
+              const filteredQ = stats
+                ? selectedDiffs.reduce((s, l) => s + (stats.byDifficulty[l] || 0), 0)
+                : totalQ;
+              const progress = examProgressStats[exam.id];
+              const takenQ = progress
+                ? selectedDiffs.reduce((s, l) => s + (progress.byDifficulty[l] || 0), 0)
+                : 0;
+              const pct = filteredQ > 0 ? Math.round((takenQ / filteredQ) * 100) : 0;
+              const hasQuestions = filteredQ > 0;
 
-          {examLoading ? (
-            <div className="tt-panel p-5 text-center text-text-secondary">Loading tests...</div>
-          ) : examError ? (
-            <div className="tt-panel p-5 text-center text-danger">{examError}</div>
-          ) : (
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-              {filteredExams.map((exam) => {
-                const totalQuestionCount = exam.questions?.[0]?.count ?? 0;
-                const theme = getTheme(exam.name);
-                const selectedDifficulties = examDifficultyFilters[exam.id] || DIFFICULTY_LEVELS;
-                const stats = examQuestionStats[exam.id];
-                const filteredQuestionCount = stats
-                  ? selectedDifficulties.reduce((sum, level) => sum + (stats.byDifficulty[level] || 0), 0)
-                  : totalQuestionCount;
-                const progress = examProgressStats[exam.id];
-                const filteredTakenCount = progress
-                  ? selectedDifficulties.reduce((sum, level) => sum + (progress.byDifficulty[level] || 0), 0)
-                  : 0;
-                const hasAnyQuestions = (stats?.total ?? totalQuestionCount) > 0;
-                const hasQuestions = filteredQuestionCount > 0;
+              return (
+                <div
+                  key={exam.id}
+                  className="tt-panel tt-interactive flex flex-col gap-3 overflow-hidden p-4 transition-transform duration-300 hover:-translate-y-0.5"
+                >
+                  {/* Badge + count */}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.6px] ${meta.badgeCls}`}>
+                      {meta.tag}
+                    </span>
+                    <span className="font-mono text-[12px] tracking-wide text-text-tertiary">
+                      {totalQ} Q
+                    </span>
+                  </div>
 
-                return (
-                  <div
-                    key={exam.id}
-                    className={`tt-panel tt-interactive relative flex h-full min-h-[202px] flex-col overflow-hidden border bg-gradient-to-br p-4 pr-[124px] duration-300 ease-out hover:-translate-y-0.5 ${theme.border} ${theme.shell}`}
-                  >
-                    <div className={`pointer-events-none absolute -bottom-10 right-2 h-24 w-24 rounded-full blur-2xl ${theme.glow}`} />
+                  {/* Name */}
+                  <h3 className="font-heading text-[32px] leading-none tracking-[0.3px] text-text-primary">
+                    {exam.name}
+                  </h3>
 
-                    <div className="relative z-10 flex items-start justify-between gap-2">
-                      <h2 className="font-body text-[34px] font-semibold leading-none tracking-[0.2px] text-white">
-                        {exam.name}
-                      </h2>
-                      {exam.is_premium && (
-                        <span className="whitespace-nowrap rounded-full border border-warning/30 bg-warning/20 px-2 py-0.5 text-[10px] font-bold text-amber-50">
-                          ✦ Premium
-                        </span>
-                      )}
+                  {/* Description */}
+                  <p className="font-body text-[13px] leading-snug text-text-secondary">
+                    {meta.desc}
+                  </p>
+
+                  {/* Completion bar */}
+                  <div className="mt-auto pt-1">
+                    <div className="flex items-baseline justify-between">
+                      <span className="font-body text-[12px] text-text-secondary">Completion</span>
+                      <span className={`font-mono text-[12px] font-semibold ${meta.barText}`}>{pct}%</span>
                     </div>
-
-                    <p className="relative z-10 mt-auto pt-5 font-body text-[13px] font-medium text-white/90">
-                      {filteredQuestionCount > 0
-                        ? `${filteredQuestionCount} question${filteredQuestionCount !== 1 ? "s" : ""}`
-                        : "No questions yet"}
-                    </p>
-                    {hasAnyQuestions && (
-                      <p className="relative z-10 mt-1 font-body text-[12px] font-semibold text-white/90">
-                        {filteredTakenCount}/{filteredQuestionCount || 0} completed
-                      </p>
-                    )}
-                    <div className="absolute bottom-2 right-2 top-2 z-20 flex w-[106px] flex-col gap-1.5 rounded-xl border border-white/20 bg-black/18 p-1.5 backdrop-blur-md">
-                      {DIFFICULTY_LEVELS.map((level) => {
-                        const active = selectedDifficulties.includes(level);
-                        return (
-                          <button
-                            key={`${exam.id}-${level}`}
-                            type="button"
-                            onClick={() => toggleExamDifficulty(exam.id, level)}
-                            className={`h-6 w-full rounded-md border px-2 text-[10px] font-semibold tracking-[0.2px] transition-colors ${
-                              active
-                                ? "border-rose-200/90 bg-rose-500/72 text-rose-50 shadow-[inset_0_0_0_1px_rgba(251,113,133,0.4)]"
-                                : theme.toggleOff
-                            }`}
-                          >
-                            {level}
-                          </button>
-                        );
-                      })}
-
-                      {!hasQuestions ? (
-                        <button
-                          disabled
-                          className="mt-auto h-12 w-full cursor-not-allowed rounded-lg border border-white/25 bg-white/10 px-2 text-[12px] font-semibold text-white/60"
-                        >
-                          {hasAnyQuestions ? "No Match" : "Coming Soon"}
-                        </button>
-                      ) : exam.is_premium ? (
-                        <button
-                          onClick={() => openTest(exam.id, selectedDifficulties)}
-                          className="mt-auto h-12 w-full rounded-lg border border-warning/35 bg-warning/30 px-2 text-[12px] font-bold text-amber-50 transition-all duration-300 ease-out hover:bg-warning/40"
-                        >
-                          Unlock →
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => openTest(exam.id, selectedDifficulties)}
-                          className={`mt-auto h-12 w-full rounded-lg border px-2 text-[14px] font-bold text-white transition-all duration-300 ease-out ${theme.button}`}
-                        >
-                          Start →
-                        </button>
-                      )}
+                    <div className="mt-1.5 h-[3px] rounded-full bg-border/40">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${meta.barCls}`}
+                        style={{ width: `${pct}%` }}
+                      />
                     </div>
                   </div>
+
+                  {/* Difficulty toggles */}
+                  <div className="flex gap-1.5">
+                    {DIFFICULTY_LEVELS.map((level) => {
+                      const active = selectedDiffs.includes(level);
+                      return (
+                        <button
+                          key={level}
+                          type="button"
+                          onClick={() => toggleDifficulty(exam.id, level)}
+                          className={`flex-1 rounded-md border py-1 text-[11px] font-semibold transition-colors ${
+                            active
+                              ? meta.toggleCls
+                              : "border-border/50 bg-card/40 text-text-tertiary hover:border-border-strong"
+                          }`}
+                        >
+                          {level}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Start button */}
+                  {hasQuestions ? (
+                    <button
+                      type="button"
+                      onClick={() => navigate(getTestUrl(exam.id, selectedDiffs))}
+                      className={`flex w-full items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r py-3 text-[13px] font-bold text-white transition-opacity hover:opacity-90 ${meta.buttonCls}`}
+                    >
+                      Start Practice
+                      <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M6 3l5 5-5 5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    </button>
+                  ) : (
+                    <button
+                      disabled
+                      className="w-full cursor-not-allowed rounded-lg border border-border/40 bg-card/30 py-3 text-[13px] font-semibold text-text-tertiary"
+                    >
+                      {totalQ > 0 ? "No Match" : "Coming Soon"}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ── News section ── */}
+        {newsItems.length > 0 && (
+          <section className="mb-4 mt-8">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="font-body text-[18px] font-bold text-text-primary">
+                Exam News & Updates
+              </h2>
+              <button
+                type="button"
+                onClick={fetchStories}
+                className="font-body text-[13px] font-semibold text-text-secondary transition-colors hover:text-text-primary"
+              >
+                See all &rarr;
+              </button>
+            </div>
+            <div className="flex flex-col gap-3">
+              {newsItems.map((story) => {
+                const nc = NEWS_COLORS[story.source] || DEFAULT_NEWS;
+                return (
+                  <a
+                    key={story.id}
+                    href={story.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={`tt-panel tt-interactive block border-l-[3px] p-4 transition-colors hover:bg-hover/20 ${nc.border}`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.5px] ${nc.badge}`}>
+                        {story.source}
+                      </span>
+                      <span className="flex items-center gap-1 text-[11px] text-text-tertiary">
+                        <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="8" cy="8" r="6" /><path d="M8 4.5V8l2.5 1.5" strokeLinecap="round" /></svg>
+                        3 min read
+                      </span>
+                    </div>
+                    <h4 className="mt-2 font-body text-[15px] font-bold leading-snug text-text-primary line-clamp-2">
+                      {story.title}
+                    </h4>
+                    <p className="mt-2 font-body text-[12px] text-text-tertiary">
+                      {formatDate(story.createdAt)}
+                    </p>
+                  </a>
                 );
               })}
             </div>
-          )}
-        </section>
+          </section>
+        )}
 
-        <section className="mt-4 grid gap-2.5 md:grid-cols-3">
-          <div className="tt-panel-soft p-3">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-text-tertiary">Stories Loaded</p>
-            <p className="mt-1 text-[24px] font-bold text-text-primary">{stories.length}</p>
-            <p className="text-[12px] text-text-secondary">Across {sourceCount} communities.</p>
-          </div>
-          <div className="tt-panel-soft p-3">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-text-tertiary">Daily Habit</p>
-            <p className="mt-1 text-[24px] font-bold text-text-primary">15 min</p>
-            <p className="text-[12px] text-text-secondary">Read updates after one test set.</p>
-          </div>
-          <div className="tt-panel-soft p-3">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-text-tertiary">Momentum</p>
-            <p className="mt-1 text-[24px] font-bold text-text-primary">{snapshot.testsTaken > 0 ? "On" : "Start"}</p>
-            <p className="text-[12px] text-text-secondary">Keep your prep streak consistent.</p>
-          </div>
-        </section>
-
-        <section className="mt-3 grid gap-2.5 md:grid-cols-3">
-          {highlights.map((story) => (
-            <a
-              key={story.id}
-              href={story.url}
-              target="_blank"
-              rel="noreferrer"
-              className="tt-panel tt-interactive group overflow-hidden p-3.5 hover:-translate-y-0.5 hover:border-border-strong"
-            >
-              {story.thumbnail && (
-                <div className="mb-2 h-20 overflow-hidden rounded-lg border border-border/40 bg-elevated/70">
-                  <img
-                    src={story.thumbnail}
-                    alt=""
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-                    loading="lazy"
-                  />
-                </div>
-              )}
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-text-tertiary">
-                {story.source}
-              </p>
-              <h2 className="mt-1.5 font-body text-[14px] font-bold leading-snug text-text-primary">
-                {story.title}
-              </h2>
-              <p className="mt-3 text-[12px] text-text-secondary">
-                {formatRelativeTime(story.createdAt)} •{" "}
-                <span className="font-semibold text-text-primary">{story.score}</span> votes •{" "}
-                <span className="font-semibold text-text-primary">{story.comments}</span> comments
-              </p>
-            </a>
-          ))}
-        </section>
-
-        <section className="mt-3">
-          <div className="mb-2.5 flex items-center justify-between">
-            <h3 className="font-body text-[16px] font-bold text-text-primary">Live Feed</h3>
-            <button type="button" onClick={fetchStories} className="tt-cta px-4 py-2 text-[13px]">
-              Refresh
-            </button>
-          </div>
-
-          {newsLoading ? (
-            <div className="tt-panel p-5 text-center font-body text-text-secondary">Loading stories...</div>
-          ) : (
-            <div className="tt-panel flex flex-col divide-y divide-border/50">
-              {feed.map((story) => (
-                <a
-                  key={story.id}
-                  href={story.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="tt-interactive grid grid-cols-[1fr_auto] gap-3 p-4 transition-colors hover:bg-hover/35 md:grid-cols-[72px_1fr_auto]"
-                >
-                  {story.thumbnail ? (
-                    <div className="hidden h-[56px] w-[72px] overflow-hidden rounded-md border border-border/40 bg-elevated/70 md:block">
-                      <img src={story.thumbnail} alt="" className="h-full w-full object-cover" loading="lazy" />
-                    </div>
-                  ) : (
-                    <div className="hidden h-[56px] w-[72px] items-center justify-center rounded-md border border-border/40 bg-elevated/70 text-[10px] font-semibold uppercase tracking-wide text-text-tertiary md:flex">
-                      News
-                    </div>
-                  )}
-                  <div className="min-w-0">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-text-tertiary">
-                      {story.source}
-                    </p>
-                    <p className="mt-1 font-body text-[14px] font-semibold leading-snug text-text-primary line-clamp-2">
-                      {story.title}
-                    </p>
-                    <p className="mt-1 text-[12px] text-text-secondary">
-                      {formatRelativeTime(story.createdAt)} • {story.score} votes • {story.comments} comments
-                    </p>
-                  </div>
-                  <span className="mt-1 shrink-0 text-[13px] font-semibold text-text-secondary">Open ↗</span>
-                </a>
-              ))}
-            </div>
-          )}
-
-          {newsError && <p className="mt-3 text-[13px] text-warning">{newsError}</p>}
-        </section>
+        {newsLoading && newsItems.length === 0 && (
+          <p className="mt-6 text-center font-body text-[13px] text-text-secondary">Loading news...</p>
+        )}
       </div>
-      {showAuthPrompt && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <button
-            type="button"
-            aria-label="Close sign-in prompt"
-            className="absolute inset-0 bg-slate-950/65 backdrop-blur-[2px]"
-            onClick={() => setShowAuthPrompt(false)}
-          />
-          <div className="relative z-10 w-full max-w-[460px] overflow-hidden rounded-3xl border border-cyan-200/35 bg-gradient-to-br from-slate-900/95 via-slate-800/94 to-slate-900/96 p-6 shadow-[0_28px_80px_rgba(5,15,30,0.62)]">
-            <div className="pointer-events-none absolute -right-10 -top-12 h-44 w-44 rounded-full bg-cyan-300/18 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-16 -left-8 h-48 w-48 rounded-full bg-emerald-300/14 blur-3xl" />
-
-            <div className="relative z-10">
-              <p className="inline-flex rounded-full border border-cyan-200/35 bg-cyan-300/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.9px] text-cyan-100">
-                Members Only For Test Start
-              </p>
-              <h3 className="mt-3 font-body text-[28px] font-bold leading-tight text-white">
-                Sign in to start this test
-              </h3>
-              <p className="mt-2 text-[13px] leading-relaxed text-slate-200/90">
-                Free tests are available, but you need an account to save progress and submit answers.
-              </p>
-              <div className="mt-5 rounded-2xl border border-white/12 bg-black/20 p-3 text-[12px] text-slate-200/85">
-                Selected test URL: <span className="font-semibold text-white">{pendingTestUrl || "New test"}</span>
-              </div>
-
-              <div className="mt-5 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                <button
-                  type="button"
-                  onClick={() => navigate("/auth", { state: { returnTo: pendingTestUrl } })}
-                  className="rounded-xl border border-cyan-200/40 bg-cyan-400/18 px-4 py-3 text-[14px] font-bold text-cyan-50 transition-colors hover:bg-cyan-400/28"
-                >
-                  Sign In
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    navigate("/auth", { state: { defaultMode: "signup", returnTo: pendingTestUrl } })
-                  }
-                  className="rounded-xl border border-emerald-200/40 bg-emerald-400/18 px-4 py-3 text-[14px] font-bold text-emerald-50 transition-colors hover:bg-emerald-400/30"
-                >
-                  Create Account
-                </button>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowAuthPrompt(false)}
-                className="mt-3 w-full rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-[13px] font-semibold text-white/90 transition-colors hover:bg-white/16"
-              >
-                Maybe Later
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
