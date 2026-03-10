@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useMemo } from "react";
 import { usePreferences } from "../context/PreferencesContext";
 
 const MOCK_NEWS = [
