@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { usePreferences } from "../context/PreferencesContext";
 
 const EXAMS = ["IELTS", "TOEFL", "TOEIC", "SAT", "GED", "DET", "ONET", "TCAS"];
 const LEVELS = [
@@ -64,6 +65,7 @@ function buildForm(profile) {
 
 function ProfileScreen() {
   const { user, profile, updateProfile, signOut } = useAuth();
+  const { preferences, updatePreferences } = usePreferences();
   const fileInputRef = useRef(null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -71,10 +73,16 @@ function ProfileScreen() {
   const [error, setError] = useState("");
   const [imageLoading, setImageLoading] = useState(false);
   const [form, setForm] = useState(buildForm(profile));
+  const [editingPreferences, setEditingPreferences] = useState(false);
+  const [prefForm, setPrefForm] = useState(preferences);
 
   useEffect(() => {
     if (!editing) setForm(buildForm(profile));
   }, [profile, editing]);
+
+  useEffect(() => {
+    setPrefForm(preferences);
+  }, [preferences]);
 
   const isComplete = Boolean(profile?.onboarding_completed);
   const displayName = form.full_name || form.username || "Student";
@@ -95,6 +103,30 @@ function ProfileScreen() {
         ? prev.target_exams.filter((e) => e !== exam)
         : [...prev.target_exams, exam],
     }));
+  }
+
+  function togglePrefExam(exam) {
+    setPrefForm((prev) => ({
+      ...prev,
+      target_exams: prev.target_exams.includes(exam)
+        ? prev.target_exams.filter((e) => e !== exam)
+        : [...prev.target_exams, exam],
+    }));
+  }
+
+  async function handleSavePreferences() {
+    setSaving(true);
+    setError("");
+    try {
+      await updatePreferences(prefForm);
+      setEditingPreferences(false);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (err) {
+      setError(err?.message || "Could not save preferences. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   function startEditing() {
@@ -375,6 +407,128 @@ function ProfileScreen() {
             </button>
           </section>
         )}
+
+        {/* Preferences Section */}
+        <section className="tt-panel mt-4 p-4 sm:p-5">
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <h2 className="font-body text-[16px] font-bold text-text-primary">
+              Learning Preferences
+            </h2>
+            {!editingPreferences && (
+              <button
+                type="button"
+                onClick={() => setEditingPreferences(true)}
+                className="tt-cta px-3 py-1.5 text-[12px]"
+              >
+                Edit
+              </button>
+            )}
+          </div>
+
+          {editingPreferences ? (
+            <div className="space-y-4">
+              <Field label="English Level">
+                <div className="flex flex-wrap gap-2">
+                  {LEVELS.map((level) => (
+                    <Chip
+                      key={level.value}
+                      active={prefForm.self_assessed_level === level.value}
+                      onClick={() => setPrefForm((p) => ({ ...p, self_assessed_level: level.value }))}
+                    >
+                      {level.label}
+                    </Chip>
+                  ))}
+                </div>
+              </Field>
+
+              <div>
+                <Field label="Target Exams">
+                  <div className="flex flex-wrap gap-2">
+                    {EXAMS.map((exam) => (
+                      <Chip
+                        key={exam}
+                        active={prefForm.target_exams.includes(exam)}
+                        onClick={() => togglePrefExam(exam)}
+                      >
+                        {exam}
+                      </Chip>
+                    ))}
+                  </div>
+                </Field>
+              </div>
+
+              <div>
+                <Field label="Daily Goal">
+                  <div className="flex flex-wrap gap-2">
+                    {GOALS.map((goal) => (
+                      <Chip
+                        key={goal}
+                        active={prefForm.daily_goal === goal}
+                        onClick={() => setPrefForm((p) => ({ ...p, daily_goal: goal }))}
+                      >
+                        {goal} questions
+                      </Chip>
+                    ))}
+                  </div>
+                </Field>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingPreferences(false);
+                    setPrefForm(preferences);
+                  }}
+                  className="flex-1 rounded-lg border border-border/70 bg-card/50 px-3 py-2 text-[13px] font-semibold text-text-secondary transition-colors hover:bg-card/75"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={handleSavePreferences}
+                  className="flex-1 tt-cta"
+                >
+                  {saving ? "Saving..." : "Save Preferences"}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-text-tertiary mb-2">
+                  English Level
+                </p>
+                <p className="text-[14px] text-text-primary">
+                  {LEVELS.find((l) => l.value === preferences.self_assessed_level)?.label || "Not set"}
+                </p>
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-text-tertiary mb-2">
+                  Target Exams
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {preferences.target_exams.length > 0 ? (
+                    preferences.target_exams.map((exam) => (
+                      <span key={exam} className="rounded-full border border-border/70 bg-card/50 px-2.5 py-1 text-[12px] font-medium text-text-primary">
+                        {exam}
+                      </span>
+                    ))
+                  ) : (
+                    <p className="text-[14px] text-text-secondary">None selected</p>
+                  )}
+                </div>
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-text-tertiary mb-2">
+                  Daily Goal
+                </p>
+                <p className="text-[14px] text-text-primary">{preferences.daily_goal} questions</p>
+              </div>
+            </div>
+          )}
+        </section>
 
         <section className="tt-panel-soft mb-6 mt-3 p-3">
           <button

@@ -2,6 +2,7 @@
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import { PreferencesProvider } from "./context/PreferencesContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import AppLayout from "./components/AppLayout";
 import PageTransition from "./components/PageTransition";
@@ -31,9 +32,11 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
+        <PreferencesProvider>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </PreferencesProvider>
       </AuthProvider>
     </ThemeProvider>
   );

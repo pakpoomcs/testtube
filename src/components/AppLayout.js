@@ -1,13 +1,15 @@
 // src/components/AppLayout.js
-import React from "react";
+import React, { useState } from "react";
 import { useLocation } from "react-router-dom";
 import BottomTabBar from "./BottomTabBar";
+import ProfileBubble from "./ProfileBubble";
 
 const HIDE_CHROME = ["/test", "/report", "/onboarding", "/auth"];
 
 function AppLayout({ children }) {
   const { pathname } = useLocation();
   const hideChrome = HIDE_CHROME.some((p) => pathname.startsWith(p));
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
     <div className="relative">
@@ -26,16 +28,23 @@ function AppLayout({ children }) {
               TestTube
             </span>
           </div>
-          <button
-            type="button"
-            aria-label="Search"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-border/60 bg-card/50 text-text-secondary transition-colors hover:border-border-strong hover:text-text-primary"
-          >
-            <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="7" />
-              <path d="M16.5 16.5L20 20" strokeLinecap="round" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              aria-label="Search"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-border/60 bg-card/50 text-text-secondary transition-colors hover:border-border-strong hover:text-text-primary"
+            >
+              <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="7" />
+                <path d="M16.5 16.5L20 20" strokeLinecap="round" />
+              </svg>
+            </button>
+            <ProfileBubble
+              isMenuOpen={isMenuOpen}
+              onMenuToggle={() => setIsMenuOpen(!isMenuOpen)}
+              onMenuClose={() => setIsMenuOpen(false)}
+            />
+          </div>
         </header>
       )}
 
