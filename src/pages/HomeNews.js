@@ -218,7 +218,8 @@ function HomeNews() {
         });
         return next;
       });
-    } catch (_) {
+    } catch (err) {
+      console.error('fetchExams error:', err);
       setExamError("Could not load tests right now.");
       setExams([]);
       setExamQuestionStats({});
@@ -248,7 +249,8 @@ function HomeNews() {
       const merged = Array.from(new Map(responses.flat().map((s) => [s.id, s])).values());
       merged.sort((a, b) => b.createdAt - a.createdAt);
       setStories(merged.slice(0, 12));
-    } catch (_) {
+    } catch (err) {
+      console.error('fetchStories error:', err);
       setStories([]);
     } finally {
       setNewsLoading(false);
