@@ -66,7 +66,7 @@ function PreferencesMenu({ isOpen, onClose, triggerRef }) {
     <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm" onClick={onClose}>
       <div
         ref={menuRef}
-        className="absolute right-4 top-[calc(64px+env(safe-area-inset-top)+8px)] w-[320px] max-w-[calc(100vw-32px)] rounded-2xl border border-border/70 bg-card/95 p-4 shadow-2xl backdrop-blur-xl"
+        className="absolute right-4 top-[calc(64px+env(safe-area-inset-top)+8px)] w-[320px] max-w-[calc(100vw-32px)] rounded-2xl border border-white/[0.12] bg-card/80 p-4 shadow-[0_24px_64px_rgba(0,0,0,0.4),inset_0_0.5px_0_rgba(255,255,255,0.12)] backdrop-blur-2xl backdrop-saturate-[1.8]"
       >
         <div className="mb-4 flex items-center justify-between">
           <h3 className="font-body text-[14px] font-bold text-text-primary">
@@ -105,8 +105,8 @@ function PreferencesMenu({ isOpen, onClose, triggerRef }) {
                   }
                   className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
                     form.self_assessed_level === level.value
-                      ? "border-border-strong bg-card/85 text-text-primary"
-                      : "border-border/70 bg-card/50 text-text-secondary hover:border-border-strong"
+                      ? "border-white/[0.18] bg-white/[0.1] text-text-primary"
+                      : "border-white/[0.06] bg-white/[0.03] text-text-secondary hover:border-white/[0.12] hover:bg-white/[0.06]"
                   }`}
                 >
                   {level.label}
@@ -128,8 +128,8 @@ function PreferencesMenu({ isOpen, onClose, triggerRef }) {
                   onClick={() => toggleExam(exam)}
                   className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
                     form.target_exams.includes(exam)
-                      ? "border-border-strong bg-card/85 text-text-primary"
-                      : "border-border/70 bg-card/50 text-text-secondary hover:border-border-strong"
+                      ? "border-white/[0.18] bg-white/[0.1] text-text-primary"
+                      : "border-white/[0.06] bg-white/[0.03] text-text-secondary hover:border-white/[0.12] hover:bg-white/[0.06]"
                   }`}
                 >
                   {exam}
@@ -151,8 +151,8 @@ function PreferencesMenu({ isOpen, onClose, triggerRef }) {
                   onClick={() => setForm((p) => ({ ...p, daily_goal: goal }))}
                   className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
                     form.daily_goal === goal
-                      ? "border-border-strong bg-card/85 text-text-primary"
-                      : "border-border/70 bg-card/50 text-text-secondary hover:border-border-strong"
+                      ? "border-white/[0.18] bg-white/[0.1] text-text-primary"
+                      : "border-white/[0.06] bg-white/[0.03] text-text-secondary hover:border-white/[0.12] hover:bg-white/[0.06]"
                   }`}
                 >
                   {goal}q
@@ -166,7 +166,7 @@ function PreferencesMenu({ isOpen, onClose, triggerRef }) {
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 rounded-lg border border-border/70 bg-card/50 px-3 py-2 text-[12px] font-semibold text-text-secondary transition-colors hover:bg-card/75"
+            className="flex-1 rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-[12px] font-semibold text-text-secondary transition-all duration-200 hover:bg-white/[0.08]"
           >
             Cancel
           </button>
@@ -174,7 +174,7 @@ function PreferencesMenu({ isOpen, onClose, triggerRef }) {
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="flex-1 rounded-lg border border-cyan-400/40 bg-cyan-500/18 px-3 py-2 text-[12px] font-bold text-cyan-50 transition-colors hover:bg-cyan-500/28 disabled:opacity-70"
+            className="flex-1 rounded-lg border border-teal/30 bg-teal/[0.12] px-3 py-2 text-[12px] font-bold text-teal backdrop-blur-md transition-all duration-200 hover:bg-teal/[0.2] disabled:opacity-70"
           >
             {saving ? "Saving..." : "Save"}
           </button>

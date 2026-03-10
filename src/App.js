@@ -9,12 +9,14 @@ import PageTransition from "./components/PageTransition";
 import TestScreen from "./pages/TestScreen";
 import ReportScreen from "./pages/ReportScreen";
 import SinglePageHub from "./pages/SinglePageHub";
+import AuthScreen from "./pages/AuthScreen";
 
 function AppRoutes() {
   return (
     <AppLayout>
       <PageTransition>
         <Routes>
+          <Route path="/auth" element={<AuthScreen />} />
           <Route path="/" element={<SinglePageHub />} />
           <Route path="/practice" element={<SinglePageHub />} />
           <Route path="/test/:examId" element={<TestScreen />} />

@@ -18,7 +18,7 @@ function NavBar() {
   const activeLinkClass = "bg-teal/15 text-teal font-bold";
 
   return (
-    <nav className="sticky top-0 z-[100] flex h-[60px] items-center justify-between bg-base px-8 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
+    <nav className="sticky top-0 z-[100] flex h-[60px] items-center justify-between border-b border-white/[0.06] bg-base/70 px-8 shadow-[0_2px_20px_rgba(0,0,0,0.25)] backdrop-blur-xl backdrop-saturate-[1.8]">
       <button
         type="button"
         className="flex items-center gap-2 bg-transparent text-[20px]"
@@ -57,16 +57,28 @@ function NavBar() {
       </div>
 
       <div className="flex items-center gap-3">
-        <span className="hidden max-w-[180px] truncate font-body text-[13px] text-text-secondary md:block">
-          {user?.email}
-        </span>
-        <button
-          type="button"
-          className="rounded-lg border border-white/20 px-3.5 py-1.5 font-body text-[13px] text-text-secondary transition-colors hover:border-border-strong hover:text-text-primary"
-          onClick={signOut}
-        >
-          Sign out
-        </button>
+        {user ? (
+          <>
+            <span className="hidden max-w-[180px] truncate font-body text-[13px] text-text-secondary md:block">
+              {user.email}
+            </span>
+            <button
+              type="button"
+              className="rounded-lg border border-white/20 px-3.5 py-1.5 font-body text-[13px] text-text-secondary transition-colors hover:border-border-strong hover:text-text-primary"
+              onClick={signOut}
+            >
+              Sign out
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            className="rounded-lg bg-teal px-4 py-1.5 font-body text-[13px] font-bold text-white transition-colors hover:brightness-110"
+            onClick={() => navigate("/auth")}
+          >
+            Sign in
+          </button>
+        )}
       </div>
     </nav>
   );

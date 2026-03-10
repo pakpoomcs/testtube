@@ -4,73 +4,125 @@
 
 :root,
 html.theme-light {
-  --color-base: 10 12 16;
-  --color-elevated: 18 22 28;
-  --color-card: 24 29 36;
-  --color-hover: 33 39 48;
-  --color-border: 58 66 78;
-  --color-border-strong: 82 93 108;
-  --color-text-primary: 231 236 243;
-  --color-text-secondary: 168 178 192;
-  --color-text-tertiary: 122 133 150;
-  --color-teal: 112 120 133;
-  --color-teal-dark: 43 47 54;
+  /* ── Liquid Glass Dark ── */
+
+  /* Base surfaces */
+  --color-base: 10 10 14;
+  --color-elevated: 22 22 28;
+  --color-card: 30 30 36;
+  --color-hover: 44 44 52;
+
+  /* Borders – used at /60, /70 opacities in Tailwind */
+  --color-border: 72 72 82;
+  --color-border-strong: 108 108 120;
+
+  /* Text – Apple-style hierarchy */
+  --color-text-primary: 242 242 247;
+  --color-text-secondary: 174 174 184;
+  --color-text-tertiary: 118 118 128;
+
+  /* Accent */
+  --color-teal: 20 184 166;
+  --color-teal-dark: 14 60 52;
   --color-accent-cyan: 56 189 248;
   --color-accent-violet: 167 139 250;
   --color-accent-rose: 251 113 133;
-  --tt-bg-overlay-a: radial-gradient(
-    circle at 12% 10%,
-    rgba(255, 255, 255, 0.06) 0,
-    rgba(255, 255, 255, 0) 34%
+
+  /* Background mesh – soft ambient blobs for glass refraction */
+  --tt-mesh-a: radial-gradient(
+    ellipse 60% 50% at 15% 8%,
+    rgba(20, 184, 166, 0.045) 0%,
+    transparent 70%
   );
-  --tt-bg-overlay-b: radial-gradient(
-    circle at 88% 18%,
-    rgba(148, 163, 184, 0.08) 0,
-    rgba(148, 163, 184, 0) 38%
+  --tt-mesh-b: radial-gradient(
+    ellipse 50% 60% at 85% 20%,
+    rgba(167, 139, 250, 0.035) 0%,
+    transparent 70%
   );
-  --tt-bg-overlay-c: linear-gradient(180deg, #161a20 0%, #0f1318 46%, #0b0f14 100%);
-  --tt-shadow-lg: 0 18px 30px rgba(3, 10, 20, 0.34);
-  --tt-shadow-soft: 0 8px 16px rgba(3, 10, 20, 0.24);
-  --tt-interactive-glow: 0 10px 26px rgba(3, 10, 20, 0.3);
-  --tt-panel-bg: 24 29 36;
-  --tt-panel-soft-bg: 18 22 28;
-  --tt-panel-border: 58 66 78;
-  --tt-panel-soft-border: 58 66 78;
+  --tt-mesh-c: radial-gradient(
+    ellipse 70% 50% at 50% 90%,
+    rgba(56, 189, 248, 0.025) 0%,
+    transparent 70%
+  );
+
+  /* Glass tokens */
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-bg-elevated: rgba(255, 255, 255, 0.07);
+  --glass-bg-hover: rgba(255, 255, 255, 0.10);
+  --glass-border: rgba(255, 255, 255, 0.10);
+  --glass-border-strong: rgba(255, 255, 255, 0.18);
+  --glass-highlight: rgba(255, 255, 255, 0.12);
+  --glass-blur: 40px;
+  --glass-saturate: 180%;
+
+  /* Shadows */
+  --tt-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.35),
+    0 4px 12px rgba(0, 0, 0, 0.2);
+  --tt-shadow-soft: 0 8px 24px rgba(0, 0, 0, 0.25);
+  --tt-shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.2),
+    0 2px 6px rgba(0, 0, 0, 0.12);
+  --tt-interactive-glow: 0 8px 32px rgba(0, 0, 0, 0.22);
+
+  /* Panel tokens (backwards compat) */
+  --tt-panel-bg: 30 30 36;
+  --tt-panel-soft-bg: 22 22 28;
+  --tt-panel-border: 72 72 82;
+  --tt-panel-soft-border: 72 72 82;
 }
 
 html.theme-dark {
-  --color-base: 18 22 30;
-  --color-elevated: 28 34 46;
-  --color-card: 36 44 58;
-  --color-hover: 48 58 74;
-  --color-border: 78 92 112;
-  --color-border-strong: 110 127 150;
-  --color-text-primary: 231 236 243;
-  --color-text-secondary: 186 196 211;
-  --color-text-tertiary: 142 156 176;
-  --color-teal: 168 179 196;
-  --color-teal-dark: 78 88 104;
+  /* ── Liquid Glass Dark (Higher contrast variant) ── */
+  --color-base: 14 14 18;
+  --color-elevated: 26 26 32;
+  --color-card: 36 36 42;
+  --color-hover: 50 50 58;
+  --color-border: 82 82 94;
+  --color-border-strong: 118 118 132;
+  --color-text-primary: 242 242 247;
+  --color-text-secondary: 180 180 190;
+  --color-text-tertiary: 128 128 138;
+  --color-teal: 20 184 166;
+  --color-teal-dark: 14 60 52;
   --color-accent-cyan: 56 189 248;
   --color-accent-violet: 167 139 250;
   --color-accent-rose: 251 113 133;
-  --tt-bg-overlay-a: radial-gradient(
-    circle at 12% 10%,
-    rgba(125, 211, 252, 0.14) 0,
-    rgba(255, 255, 255, 0) 34%
+
+  --tt-mesh-a: radial-gradient(
+    ellipse 60% 50% at 15% 8%,
+    rgba(20, 184, 166, 0.06) 0%,
+    transparent 70%
   );
-  --tt-bg-overlay-b: radial-gradient(
-    circle at 88% 18%,
-    rgba(167, 139, 250, 0.12) 0,
-    rgba(148, 163, 184, 0) 38%
+  --tt-mesh-b: radial-gradient(
+    ellipse 50% 60% at 85% 20%,
+    rgba(167, 139, 250, 0.05) 0%,
+    transparent 70%
   );
-  --tt-bg-overlay-c: linear-gradient(180deg, #222a38 0%, #1a2230 46%, #151c27 100%);
-  --tt-shadow-lg: 0 18px 30px rgba(3, 10, 20, 0.34);
-  --tt-shadow-soft: 0 8px 16px rgba(3, 10, 20, 0.24);
-  --tt-interactive-glow: 0 10px 26px rgba(3, 10, 20, 0.3);
-  --tt-panel-bg: 24 29 36;
-  --tt-panel-soft-bg: 18 22 28;
-  --tt-panel-border: 58 66 78;
-  --tt-panel-soft-border: 58 66 78;
+  --tt-mesh-c: radial-gradient(
+    ellipse 70% 50% at 50% 90%,
+    rgba(56, 189, 248, 0.035) 0%,
+    transparent 70%
+  );
+
+  --glass-bg: rgba(255, 255, 255, 0.06);
+  --glass-bg-elevated: rgba(255, 255, 255, 0.09);
+  --glass-bg-hover: rgba(255, 255, 255, 0.12);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-border-strong: rgba(255, 255, 255, 0.22);
+  --glass-highlight: rgba(255, 255, 255, 0.14);
+  --glass-blur: 44px;
+  --glass-saturate: 190%;
+
+  --tt-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.4),
+    0 4px 12px rgba(0, 0, 0, 0.25);
+  --tt-shadow-soft: 0 8px 24px rgba(0, 0, 0, 0.3);
+  --tt-shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.25),
+    0 2px 6px rgba(0, 0, 0, 0.15);
+  --tt-interactive-glow: 0 8px 32px rgba(0, 0, 0, 0.28);
+
+  --tt-panel-bg: 36 36 42;
+  --tt-panel-soft-bg: 26 26 32;
+  --tt-panel-border: 82 82 94;
+  --tt-panel-soft-border: 82 82 94;
 }
 
 *,
@@ -86,7 +138,7 @@ body,
 #root {
   min-height: 100dvh;
   background-color: rgb(var(--color-base));
-  background-image: var(--tt-bg-overlay-a), var(--tt-bg-overlay-b), var(--tt-bg-overlay-c);
+  background-image: var(--tt-mesh-a), var(--tt-mesh-b), var(--tt-mesh-c);
   color: rgb(var(--color-text-primary));
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -101,7 +153,7 @@ select {
   font-family: inherit;
 }
 
-/* Page transition letter animation */
+/* Page transition animation */
 @keyframes ttFadeInUp {
   from {
     opacity: 0;
@@ -113,6 +165,16 @@ select {
   }
 }
 
+/* Liquid shimmer for interactive glass surfaces */
+@keyframes ttGlassShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
 ::-webkit-scrollbar {
   width: 5px;
 }
@@ -120,11 +182,11 @@ select {
   background: rgb(var(--color-base));
 }
 ::-webkit-scrollbar-thumb {
-  background: rgb(var(--color-border));
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgb(var(--color-border-strong));
+  background: rgba(255, 255, 255, 0.18);
 }
 
 @layer components {
@@ -136,52 +198,78 @@ select {
     @apply mx-auto w-full max-w-[980px] px-4 pb-16 pt-5;
   }
 
+  /* ── Liquid Glass Panel ── */
   .tt-panel {
-    @apply rounded-2xl border backdrop-blur-[26px] backdrop-saturate-150;
-    border-color: rgb(var(--tt-panel-border) / 0.6);
-    background: linear-gradient(
-      155deg,
-      rgb(var(--tt-panel-bg) / 0.86) 0%,
-      rgb(var(--tt-panel-bg) / 0.68) 100%
-    );
-    background-image:
-      linear-gradient(155deg, rgb(var(--tt-panel-bg) / 0.88) 0%, rgb(var(--tt-panel-bg) / 0.66) 100%),
-      radial-gradient(circle at 14% 16%, rgb(255 255 255 / 0.18) 0%, transparent 40%),
-      radial-gradient(circle at 86% 78%, rgb(255 255 255 / 0.11) 0%, transparent 36%),
-      radial-gradient(circle at 52% 52%, rgb(255 255 255 / 0.06) 0%, transparent 58%);
+    @apply rounded-2xl;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur))
+      saturate(var(--glass-saturate));
+    box-shadow:
+      var(--tt-shadow-glass),
+      inset 0 0.5px 0 var(--glass-highlight),
+      inset 0 -0.5px 0 rgba(255, 255, 255, 0.04);
+    transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .tt-panel:hover {
+    background: var(--glass-bg-hover);
+    border-color: var(--glass-border-strong);
     box-shadow:
       var(--tt-shadow-lg),
-      inset 0 1px 0 rgb(255 255 255 / 0.3),
-      inset 0 -1px 0 rgb(255 255 255 / 0.08),
-      inset 0 0 32px rgb(255 255 255 / 0.05);
+      inset 0 0.5px 0 var(--glass-highlight),
+      inset 0 -0.5px 0 rgba(255, 255, 255, 0.04);
   }
 
+  /* ── Liquid Glass Panel (Soft variant) ── */
   .tt-panel-soft {
-    @apply rounded-xl border backdrop-blur-[24px] backdrop-saturate-150;
-    border-color: rgb(var(--tt-panel-soft-border) / 0.56);
-    background: linear-gradient(
-      160deg,
-      rgb(var(--tt-panel-soft-bg) / 0.76) 0%,
-      rgb(var(--tt-panel-soft-bg) / 0.6) 100%
-    );
-    background-image:
-      linear-gradient(160deg, rgb(var(--tt-panel-soft-bg) / 0.78) 0%, rgb(var(--tt-panel-soft-bg) / 0.58) 100%),
-      radial-gradient(circle at 18% 20%, rgb(255 255 255 / 0.14) 0%, transparent 38%),
-      radial-gradient(circle at 78% 72%, rgb(255 255 255 / 0.08) 0%, transparent 34%);
+    @apply rounded-xl;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(calc(var(--glass-blur) * 0.6))
+      saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(calc(var(--glass-blur) * 0.6))
+      saturate(var(--glass-saturate));
     box-shadow:
       var(--tt-shadow-soft),
-      inset 0 1px 0 rgb(255 255 255 / 0.24),
-      inset 0 0 24px rgb(255 255 255 / 0.04);
+      inset 0 0.5px 0 rgba(255, 255, 255, 0.08);
+    transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
+  /* ── Glass Pill ── */
   .tt-pill {
-    @apply rounded-full border border-border/70 bg-card/60 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-text-secondary;
+    @apply rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    color: rgb(var(--color-text-secondary));
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
   }
 
+  /* ── Glass CTA Button ── */
   .tt-cta {
-    @apply rounded-xl border border-border/70 bg-card/70 px-4 py-2.5 font-body text-[13px] font-semibold text-text-primary shadow-[0_6px_14px_rgba(0,0,0,0.16)] transition-all duration-200 hover:-translate-y-0.5 hover:border-border-strong hover:bg-hover/45;
+    @apply rounded-xl px-4 py-2.5 font-body text-[13px] font-semibold text-text-primary;
+    background: var(--glass-bg-elevated);
+    border: 1px solid var(--glass-border-strong);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    box-shadow:
+      0 4px 16px rgba(0, 0, 0, 0.18),
+      inset 0 0.5px 0 var(--glass-highlight);
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
+  .tt-cta:hover {
+    background: var(--glass-bg-hover);
+    border-color: rgba(255, 255, 255, 0.24);
+    transform: translateY(-1px);
+    box-shadow:
+      0 8px 24px rgba(0, 0, 0, 0.24),
+      inset 0 0.5px 0 rgba(255, 255, 255, 0.18);
+  }
+
+  /* ── Interactive glass surface ── */
   .tt-interactive {
     @apply transition-all duration-300 ease-out;
   }

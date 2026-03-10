@@ -13,13 +13,13 @@ function AppLayout({ children }) {
 
   return (
     <div className="relative">
-      <div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_20%_90%,rgba(125,211,252,0.08),transparent_32%),radial-gradient(circle_at_80%_20%,rgba(167,139,250,0.08),transparent_30%)]" />
+      <div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(ellipse_60%_40%_at_20%_85%,rgba(20,184,166,0.05),transparent_70%),radial-gradient(ellipse_50%_40%_at_80%_15%,rgba(167,139,250,0.04),transparent_70%)]" />
 
       {!hideChrome && (
         <header className="relative z-20 mx-auto flex max-w-[980px] items-center justify-between px-4 pb-1 pt-[calc(env(safe-area-inset-top)+14px)]">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-emerald-400/30 bg-emerald-500/15">
-              <svg viewBox="0 0 24 24" className="h-5 w-5 text-emerald-400" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-teal/25 bg-teal/[0.08] backdrop-blur-md">
+              <svg viewBox="0 0 24 24" className="h-5 w-5 text-teal" fill="none" stroke="currentColor" strokeWidth="1.8">
                 <path d="M9 3h6v2H9zM10 5v6l-4 7h12l-4-7V5" strokeLinecap="round" strokeLinejoin="round" />
                 <path d="M8 15h8" strokeLinecap="round" opacity="0.5" />
               </svg>
@@ -32,7 +32,7 @@ function AppLayout({ children }) {
             <button
               type="button"
               aria-label="Search"
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-border/60 bg-card/50 text-text-secondary transition-colors hover:border-border-strong hover:text-text-primary"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.1] bg-white/[0.05] text-text-secondary backdrop-blur-lg transition-all duration-200 hover:border-white/[0.18] hover:bg-white/[0.08] hover:text-text-primary"
             >
               <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="11" cy="11" r="7" />
