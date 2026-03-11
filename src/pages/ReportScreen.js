@@ -36,20 +36,27 @@ function ReportScreen() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  if (!location.state) { navigate("/practice"); return null; }
-  const { answers, questions, exam } = location.state || {};
+  let reportState = location.state;
+  if (!reportState) {
+    try {
+      const saved = sessionStorage.getItem("tt_last_report");
+      if (saved) reportState = JSON.parse(saved);
+    } catch (_) {}
+  }
+  if (!reportState) { navigate("/practice"); return null; }
+  const { answers, questions, exam } = reportState;
   if (!questions || questions.length === 0) { navigate("/practice"); return null; }
 
   const totalQuestions = questions.length;
-  const correctCount = questions.filter((q, i) => checkCorrect(q, answers[i])).length;
+  const correctCount = questions.filter((q) => checkCorrect(q, answers[q.id])).length;
   const wrongCount = totalQuestions - correctCount;
   const scorePercent = Math.round((correctCount / totalQuestions) * 100);
 
-  const topicBreakdown = questions.reduce((acc, q, i) => {
+  const topicBreakdown = questions.reduce((acc, q) => {
     const topic = q.topic || "General";
     if (!acc[topic]) acc[topic] = { correct: 0, total: 0 };
     acc[topic].total++;
-    if (checkCorrect(q, answers[i])) acc[topic].correct++;
+    if (checkCorrect(q, answers[q.id])) acc[topic].correct++;
     return acc;
   }, {});
 
@@ -131,14 +138,14 @@ function ReportScreen() {
         <div className="tt-panel p-6 flex flex-col gap-3">
           <h3 className="font-body font-bold text-[16px] text-text-primary">📝 Question Review</h3>
           {questions.map((q, i) => {
-            const isCorrect = checkCorrect(q, answers[i]);
+            const isCorrect = checkCorrect(q, answers[q.id]);
             return (
-              <div key={i} className={`tt-panel-soft border-l-4 p-4 ${isCorrect ? "border-l-success" : "border-l-danger"}`}>
+              <div key={q.id} className={`tt-panel-soft border-l-4 p-4 ${isCorrect ? "border-l-success" : "border-l-danger"}`}>
                 <p className="font-body font-semibold text-[14px] text-text-primary leading-relaxed mb-1.5">
                   {i + 1}. {q.question_text}
                 </p>
                 <p className={`font-body font-bold text-[13px] ${isCorrect ? "text-success" : "text-danger"}`}>
-                  {isCorrect ? "✅ Correct" : `❌ You answered: ${getAnswerLabel(q, answers[i])} · Correct: ${getCorrectLabel(q)}`}
+                  {isCorrect ? "✅ Correct" : `❌ You answered: ${getAnswerLabel(q, answers[q.id])} · Correct: ${getCorrectLabel(q)}`}
                 </p>
                 {!isCorrect && q.explanation && (
                   <p className="font-body text-[13px] text-text-secondary leading-relaxed mt-2 pt-2 border-t border-border">
@@ -156,7 +163,7 @@ function ReportScreen() {
             className="flex-1 py-4 bg-transparent border border-border text-text-primary rounded-xl font-body font-semibold text-[15px] cursor-pointer hover:border-border-strong transition-colors">
             ← Back to Exams
           </button>
-          <button onClick={() => navigate(`/test/${exam.id}`)}
+          <button onClick={() => exam?.id && navigate(`/test/${exam.id}`)}
             className="flex-1 py-4 bg-teal text-base border-none rounded-xl font-body font-bold text-[15px] cursor-pointer hover:opacity-90 transition-opacity">
             Try Again
           </button>

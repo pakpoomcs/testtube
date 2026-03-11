@@ -20,7 +20,7 @@ function AppLayout({ children }) {
     if (loading) return;
     if (!user) return;
     if (pathname === "/onboarding" || pathname === "/auth") return;
-    if (profile && profile.onboarding_completed === false) {
+    if (profile && !profile.onboarding_completed) {
       navigate("/onboarding");
     }
   }, [user, profile, loading, pathname, navigate]);

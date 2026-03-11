@@ -195,24 +195,24 @@ function TestScreen() {
 
   const currentQuestion = questions[currentIndex];
   const isLastQuestion = currentIndex === questions.length - 1;
-  const hasAnswer = answers[currentIndex] !== undefined;
+  const hasAnswer = answers[currentQuestion?.id] !== undefined;
 
   function handleAnswer(value) {
     if (submitted) return;
     if (currentQuestion?.question_type !== "fill_blank") playSelectSound();
-    setAnswers((prev) => ({ ...prev, [currentIndex]: value }));
+    setAnswers((prev) => ({ ...prev, [currentQuestion.id]: value }));
   }
 
   function handleTypingAnswer(value) {
     if (submitted) return;
     playTypeSound();
-    setAnswers((prev) => ({ ...prev, [currentIndex]: value }));
+    setAnswers((prev) => ({ ...prev, [currentQuestion.id]: value }));
   }
 
   function handleSubmit() {
     if (!hasAnswer) return;
     setSubmitted(true);
-    const correct = checkCorrect(currentQuestion, answers[currentIndex]);
+    const correct = checkCorrect(currentQuestion, answers[currentQuestion.id]);
     if (correct) playCorrectSound();
     else playWrongSound();
   }
@@ -229,7 +229,9 @@ function TestScreen() {
       await saveSession();
       localStorage.removeItem(getTimerKey(examId));
       localStorage.removeItem(getProgressKey(examId));
-      navigate("/report", { state: { answers, questions, exam } });
+      const reportState = { answers, questions, exam };
+      try { sessionStorage.setItem("tt_last_report", JSON.stringify(reportState)); } catch (_) {}
+      navigate("/report", { state: reportState });
     } else {
       setCurrentIndex((prev) => prev + 1);
       setSubmitted(false);
@@ -243,8 +245,8 @@ function TestScreen() {
         user_id: user.id,
         question_id: currentQuestion.id,
         exam_id: examId,
-        selected_option: String(answers[currentIndex]),
-        is_correct: checkCorrect(currentQuestion, answers[currentIndex]),
+        selected_option: String(answers[currentQuestion.id]),
+        is_correct: checkCorrect(currentQuestion, answers[currentQuestion.id]),
       });
     } catch (err) {
       console.error("Save result error:", err.message);
@@ -257,7 +259,7 @@ function TestScreen() {
     try {
       const total = questions.length;
       const correct = questions.filter(
-        (q, i) => answers[i] !== undefined && checkCorrect(q, answers[i])
+        (q) => answers[q.id] !== undefined && checkCorrect(q, answers[q.id])
       ).length;
       await supabase.from("test_sessions").insert({
         user_id: user.id,
@@ -402,7 +404,7 @@ function TestScreen() {
 
   const progress = ((currentIndex + 1) / questions.length) * 100;
   const isCorrect =
-    submitted && checkCorrect(currentQuestion, answers[currentIndex]);
+    submitted && checkCorrect(currentQuestion, answers[currentQuestion?.id]);
 
   return (
     <div className="min-h-screen bg-base flex flex-col max-w-[720px] mx-auto pb-0">
@@ -484,7 +486,7 @@ function TestScreen() {
         {/* Answer inputs */}
         {currentQuestion?.question_type === "fill_blank" ? (
           <FillBlankInput
-            value={answers[currentIndex] || ""}
+            value={answers[currentQuestion?.id] || ""}
             onChange={handleTypingAnswer}
             submitted={submitted}
             isCorrect={isCorrect}
@@ -492,7 +494,7 @@ function TestScreen() {
           />
         ) : currentQuestion?.question_type === "tfng" ? (
           <TFNGInput
-            value={answers[currentIndex]}
+            value={answers[currentQuestion?.id]}
             onChange={handleAnswer}
             submitted={submitted}
             correct={currentQuestion?.tfng_answer}
@@ -501,7 +503,7 @@ function TestScreen() {
         ) : (
           <MCQInput
             question={currentQuestion}
-            value={answers[currentIndex]}
+            value={answers[currentQuestion?.id]}
             onChange={handleAnswer}
             submitted={submitted}
             isCorrect={isCorrect}
