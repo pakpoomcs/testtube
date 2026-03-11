@@ -11,6 +11,7 @@ import ReportScreen from "./pages/ReportScreen";
 import SinglePageHub from "./pages/SinglePageHub";
 import AuthScreen from "./pages/AuthScreen";
 import OnboardingScreen from "./pages/OnboardingScreen";
+import ResetPasswordScreen from "./pages/ResetPasswordScreen";
 
 function AppRoutes() {
   return (
@@ -19,6 +20,7 @@ function AppRoutes() {
         <Routes>
           <Route path="/auth" element={<AuthScreen />} />
           <Route path="/onboarding" element={<OnboardingScreen />} />
+          <Route path="/reset-password" element={<ResetPasswordScreen />} />
           <Route path="/" element={<SinglePageHub />} />
           <Route path="/practice" element={<SinglePageHub />} />
           <Route path="/test/:examId" element={<TestScreen />} />

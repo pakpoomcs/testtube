@@ -6,7 +6,7 @@ import ProfileBubble from "./ProfileBubble";
 import Logo from "./Logo";
 import { useAuth } from "../context/AuthContext";
 
-const HIDE_CHROME = ["/test", "/report", "/onboarding", "/auth"];
+const HIDE_CHROME = ["/test", "/report", "/onboarding", "/auth", "/reset-password"];
 
 function AppLayout({ children }) {
   const { pathname } = useLocation();
