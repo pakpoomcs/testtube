@@ -23,3 +23,6 @@ Thumbs.db
 # Editor
 .vscode/
 .idea/
+# Capacitor native projects (regenerated via `npm run cap:sync`)
+ios/
+android/
