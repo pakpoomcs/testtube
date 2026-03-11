@@ -312,6 +312,7 @@ function HomeNews() {
               </button>
               <button
                 type="button"
+                onClick={() => navigate("/pricing")}
                 className="rounded-xl border border-border/70 bg-card/50 px-5 py-3 font-body text-[14px] font-semibold text-text-primary transition-colors hover:bg-hover/40"
               >
                 View Plans

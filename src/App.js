@@ -3,6 +3,7 @@ import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { PreferencesProvider } from "./context/PreferencesContext";
+import { SubscriptionProvider } from "./context/SubscriptionContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import AppLayout from "./components/AppLayout";
 import PageTransition from "./components/PageTransition";
@@ -12,6 +13,7 @@ import SinglePageHub from "./pages/SinglePageHub";
 import AuthScreen from "./pages/AuthScreen";
 import OnboardingScreen from "./pages/OnboardingScreen";
 import ResetPasswordScreen from "./pages/ResetPasswordScreen";
+import PricingPage from "./pages/PricingPage";
 
 function AppRoutes() {
   return (
@@ -21,6 +23,7 @@ function AppRoutes() {
           <Route path="/auth" element={<AuthScreen />} />
           <Route path="/onboarding" element={<OnboardingScreen />} />
           <Route path="/reset-password" element={<ResetPasswordScreen />} />
+          <Route path="/pricing" element={<PricingPage />} />
           <Route path="/" element={<SinglePageHub />} />
           <Route path="/practice" element={<SinglePageHub />} />
           <Route path="/test/:examId" element={<TestScreen />} />
@@ -39,9 +42,11 @@ function App() {
     <ThemeProvider>
       <AuthProvider>
         <PreferencesProvider>
+        <SubscriptionProvider>
           <BrowserRouter>
             <AppRoutes />
           </BrowserRouter>
+        </SubscriptionProvider>
         </PreferencesProvider>
       </AuthProvider>
     </ThemeProvider>

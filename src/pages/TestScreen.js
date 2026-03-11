@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { useAuth } from "../context/AuthContext";
+import { useSubscription } from "../context/SubscriptionContext";
 
 // ── Sound Effects (Web Audio API) ──
 const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -77,6 +78,7 @@ function TestScreen() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { canAnswerQuestion, questionsRemaining, FREE_DAILY_LIMIT, refetchUsage } = useSubscription();
 
   const [exam, setExam] = useState(null);
   const [questions, setQuestions] = useState([]);
@@ -222,6 +224,7 @@ function TestScreen() {
 
   async function handleNext() {
     await saveResult();
+    await refetchUsage();
     if (isLastQuestion) {
       await saveSession();
       localStorage.removeItem(getTimerKey(examId));
@@ -334,6 +337,40 @@ function TestScreen() {
     return text;
   }
 
+  // Daily limit reached — show paywall
+  if (!loading && !canAnswerQuestion)
+    return (
+      <div className="min-h-screen bg-base flex flex-col items-center justify-center gap-6 p-8 text-center">
+        <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-warning-bg border border-warning/30">
+          <svg viewBox="0 0 24 24" className="h-10 w-10 text-warning" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 6v6l4 2" strokeLinecap="round" />
+          </svg>
+        </div>
+        <div>
+          <h2 className="font-body font-bold text-[22px] text-text-primary">Daily limit reached</h2>
+          <p className="font-body text-[14px] text-text-secondary mt-2 max-w-[300px] leading-relaxed">
+            You've answered {FREE_DAILY_LIMIT} questions today. Upgrade to Premium for unlimited practice.
+          </p>
+        </div>
+        <div className="flex flex-col gap-3 w-full max-w-[280px]">
+          <button
+            onClick={() => navigate("/pricing")}
+            className="w-full py-4 bg-teal text-base border-none rounded-xl font-body font-bold text-[15px] cursor-pointer shadow-[0_8px_24px_rgba(20,184,166,0.3)] hover:brightness-105 transition-all"
+          >
+            Upgrade to Premium — ฿99/mo
+          </button>
+          <button
+            onClick={() => navigate("/")}
+            className="w-full py-3 bg-transparent border border-border text-text-secondary rounded-xl font-body font-semibold text-[14px] cursor-pointer hover:border-border-strong transition-colors"
+          >
+            Back to Home
+          </button>
+        </div>
+        <p className="font-body text-[12px] text-text-tertiary">Resets at midnight · {FREE_DAILY_LIMIT} free questions/day</p>
+      </div>
+    );
+
   if (loading)
     return (
       <div className="min-h-screen bg-base flex items-center justify-center">
@@ -385,9 +422,16 @@ function TestScreen() {
             {currentIndex + 1} / {questions.length}
           </span>
         </div>
-        <span className="font-mono text-[14px] text-teal font-bold min-w-[52px] text-right">
-          {formatTime(elapsed)}
-        </span>
+        <div className="flex items-center gap-2">
+          {questionsRemaining !== Infinity && questionsRemaining <= 10 && (
+            <span className="font-body text-[11px] text-warning bg-warning-bg border border-warning/20 px-2 py-0.5 rounded-full">
+              {questionsRemaining} left today
+            </span>
+          )}
+          <span className="font-mono text-[14px] text-teal font-bold min-w-[52px] text-right">
+            {formatTime(elapsed)}
+          </span>
+        </div>
       </div>
 
       {/* Progress bar */}

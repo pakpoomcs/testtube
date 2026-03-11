@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { usePreferences } from "../context/PreferencesContext";
+import { useSubscription } from "../context/SubscriptionContext";
 
 const EXAMS = ["IELTS", "TOEFL", "TOEIC", "SAT", "GED", "DET", "ONET", "TCAS"];
 const LEVELS = [
@@ -64,8 +66,10 @@ function buildForm(profile) {
 }
 
 function ProfileScreen() {
+  const navigate = useNavigate();
   const { user, profile, updateProfile, signOut } = useAuth();
   const { preferences, updatePreferences } = usePreferences();
+  const { isPremium, todayCount, questionsRemaining, FREE_DAILY_LIMIT } = useSubscription();
   const fileInputRef = useRef(null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -527,6 +531,43 @@ function ProfileScreen() {
                 <p className="text-[14px] text-text-primary">{preferences.daily_goal} questions</p>
               </div>
             </div>
+          )}
+        </section>
+
+        {/* Subscription */}
+        <section className="tt-panel mt-3 p-5 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <h3 className="font-body font-bold text-[15px] text-text-primary">Subscription</h3>
+            {isPremium
+              ? <span className="rounded-full bg-teal/15 border border-teal/25 px-3 py-0.5 text-[11px] font-bold text-teal uppercase tracking-wider">Premium</span>
+              : <span className="rounded-full bg-card border border-border px-3 py-0.5 text-[11px] font-bold text-text-tertiary uppercase tracking-wider">Free</span>
+            }
+          </div>
+          {isPremium ? (
+            <p className="font-body text-[13px] text-text-secondary">Unlimited questions · All exams included</p>
+          ) : (
+            <>
+              <div className="flex flex-col gap-1">
+                <div className="flex justify-between font-body text-[13px]">
+                  <span className="text-text-secondary">Today's usage</span>
+                  <span className="font-semibold text-text-primary">{todayCount} / {FREE_DAILY_LIMIT}</span>
+                </div>
+                <div className="h-[5px] rounded-full bg-border/40 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${todayCount >= FREE_DAILY_LIMIT ? "bg-warning" : "bg-teal"}`}
+                    style={{ width: `${Math.min(100, (todayCount / FREE_DAILY_LIMIT) * 100)}%` }}
+                  />
+                </div>
+                <p className="font-body text-[12px] text-text-tertiary">{questionsRemaining} questions remaining today</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate("/pricing")}
+                className="w-full py-3 bg-teal text-base border-none rounded-xl font-body font-bold text-[14px] cursor-pointer shadow-[0_6px_18px_rgba(20,184,166,0.28)] hover:brightness-105 transition-all"
+              >
+                Upgrade to Premium — ฿99/mo
+              </button>
+            </>
           )}
         </section>
 
