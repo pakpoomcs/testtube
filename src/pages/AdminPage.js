@@ -4,6 +4,31 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { useAuth } from "../context/AuthContext";
 
+const BULK_TEMPLATE = `[
+  {
+    "question_type": "mcq",
+    "question_text": "Which word means happy?",
+    "option_a": "Sad", "option_b": "Joyful", "option_c": "Angry", "option_d": "Tired",
+    "correct_option": "b",
+    "explanation": "Joyful means feeling great happiness.",
+    "topic": "Vocabulary", "difficulty": "Easy", "is_premium": false
+  },
+  {
+    "question_type": "tfng",
+    "question_text": "Passage: \\"The Eiffel Tower is in Paris.\\"\\n\\nStatement: The Eiffel Tower is located in France.",
+    "tfng_answer": "true",
+    "explanation": "Paris is the capital of France, so this is true.",
+    "topic": "Reading", "difficulty": "Easy", "is_premium": false
+  },
+  {
+    "question_type": "fill_blank",
+    "question_text": "Water boils at [BLANK] degrees Celsius at sea level.",
+    "blank_answer": "100",
+    "explanation": "Water boils at 100°C (212°F) at standard atmospheric pressure.",
+    "topic": "Science", "difficulty": "Easy", "is_premium": false
+  }
+]`;
+
 function AdminPage() {
   const { isAdmin } = useAuth();
   const navigate = useNavigate();
@@ -25,6 +50,9 @@ function AdminPage() {
     name: "", name_th: "", description: "", description_th: "",
     category: "English", difficulty: "Intermediate", is_premium: false,
   });
+
+  const [bulkJson, setBulkJson] = useState("");
+  const [bulkResult, setBulkResult] = useState(null);
 
   useEffect(() => {
     if (!isAdmin) { navigate("/"); return; }
@@ -94,6 +122,31 @@ function AdminPage() {
     finally { setSaving(false); }
   }
 
+  async function handleBulkImport() {
+    if (!selectedExam) { setMessage({ type: "error", text: "Select an exam first." }); return; }
+    setBulkResult(null); setSaving(true); setMessage(null);
+    let parsed;
+    try {
+      parsed = JSON.parse(bulkJson);
+      if (!Array.isArray(parsed)) throw new Error("JSON must be an array of question objects.");
+    } catch (err) {
+      setMessage({ type: "error", text: `Invalid JSON: ${err.message}` });
+      setSaving(false); return;
+    }
+    const rows = parsed.map((q) => ({ exam_id: selectedExam.id, ...q }));
+    try {
+      const { error } = await supabase.from("questions").insert(rows);
+      if (error) throw error;
+      setBulkResult({ inserted: rows.length });
+      setBulkJson("");
+      fetchQuestions(selectedExam.id);
+      setMessage({ type: "success", text: `${rows.length} question${rows.length !== 1 ? "s" : ""} imported successfully!` });
+      setActiveTab("questions");
+    } catch (err) {
+      setMessage({ type: "error", text: err.message });
+    } finally { setSaving(false); }
+  }
+
   const updateForm = (f, v) => setForm((p) => ({ ...p, [f]: v }));
   const updateExamForm = (f, v) => setExamForm((p) => ({ ...p, [f]: v }));
 
@@ -152,8 +205,8 @@ function AdminPage() {
 
             {/* Tabs */}
             {activeTab !== "addExam" && (
-              <div className="flex gap-2">
-                {[["questions", `Questions (${questions.length})`], ["addQuestion", "+ Add Question"]].map(([tab, label]) => (
+              <div className="flex gap-2 flex-wrap">
+                {[["questions", `Questions (${questions.length})`], ["addQuestion", "+ Add Question"], ["bulkImport", "⬆ Bulk Import"]].map(([tab, label]) => (
                   <button key={tab} onClick={() => setActiveTab(tab)}
                     className={`px-5 py-2 rounded-full font-body font-medium text-[13px] cursor-pointer border transition-all ${
                       activeTab === tab
@@ -263,6 +316,55 @@ function AdminPage() {
                   <button onClick={handleAddQuestion} disabled={saving}
                     className={`px-6 py-3 bg-teal text-base border-none rounded-xl font-body font-semibold text-[14px] cursor-pointer transition-opacity ${saving ? "opacity-60" : "opacity-100"}`}>
                     {saving ? "Saving..." : "Save Question"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Bulk import */}
+            {activeTab === "bulkImport" && (
+              <div className="bg-elevated border border-border rounded-2xl p-7 flex flex-col gap-4">
+                <div>
+                  <h2 className="font-body font-bold text-[18px] text-text-primary">Bulk Import to {selectedExam?.name}</h2>
+                  <p className="font-body text-[13px] text-text-secondary mt-1">Paste a JSON array of question objects. Each object must include <code className="bg-card px-1 rounded text-teal">question_type</code>, <code className="bg-card px-1 rounded text-teal">question_text</code>, <code className="bg-card px-1 rounded text-teal">explanation</code>, <code className="bg-card px-1 rounded text-teal">topic</code>, and <code className="bg-card px-1 rounded text-teal">difficulty</code>.</p>
+                </div>
+
+                <div className="bg-card border border-border rounded-xl p-4 flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <p className="font-body font-semibold text-[12px] text-text-tertiary uppercase tracking-widest">JSON Template</p>
+                    <button onClick={() => setBulkJson(BULK_TEMPLATE)}
+                      className="bg-transparent border border-border text-text-secondary px-3 py-1 rounded-lg font-body text-[12px] cursor-pointer hover:border-border-strong transition-colors">
+                      Load Template
+                    </button>
+                  </div>
+                  <pre className="font-mono text-[11px] text-text-secondary overflow-x-auto whitespace-pre-wrap leading-relaxed max-h-[160px] overflow-y-auto">{BULK_TEMPLATE}</pre>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="font-body font-semibold text-[13px] text-text-secondary">Your JSON *</label>
+                  <textarea
+                    rows={12}
+                    placeholder="Paste your JSON array here..."
+                    value={bulkJson}
+                    onChange={(e) => setBulkJson(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-border bg-card text-text-primary text-[13px] font-mono outline-none focus:border-teal transition-colors resize-y"
+                  />
+                </div>
+
+                {bulkResult && (
+                  <div className="bg-success-bg border border-success/30 rounded-xl px-4 py-3 font-body text-[14px] text-success">
+                    ✅ {bulkResult.inserted} questions imported.
+                  </div>
+                )}
+
+                <div className="flex gap-3 justify-end">
+                  <button onClick={() => { setBulkJson(""); setBulkResult(null); setActiveTab("questions"); }}
+                    className="px-6 py-3 bg-transparent border border-border text-text-secondary rounded-xl font-body font-semibold text-[14px] cursor-pointer hover:border-border-strong transition-colors">
+                    Cancel
+                  </button>
+                  <button onClick={handleBulkImport} disabled={saving || !bulkJson.trim()}
+                    className={`px-6 py-3 bg-teal text-base border-none rounded-xl font-body font-semibold text-[14px] cursor-pointer transition-opacity ${(saving || !bulkJson.trim()) ? "opacity-40" : "opacity-100"}`}>
+                    {saving ? "Importing..." : "Import Questions"}
                   </button>
                 </div>
               </div>
