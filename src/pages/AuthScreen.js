@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
+import Logo from "../components/Logo";
 
 function AuthScreen() {
   const navigate = useNavigate();
@@ -93,11 +94,7 @@ function AuthScreen() {
             animating ? "translate-y-1.5 opacity-0" : "translate-y-0 opacity-100"
           }`}
         >
-          {/* Logo */}
-          <div className="flex items-center gap-2">
-            <span className="text-[22px]">🧪</span>
-            <span className="font-heading text-[22px] text-teal tracking-[2px]">TestTube</span>
-          </div>
+          <Logo size={26} />
 
           <div>
             <h1 className="font-body font-bold text-[24px] text-text-primary leading-tight">

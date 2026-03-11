@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import BottomTabBar from "./BottomTabBar";
 import ProfileBubble from "./ProfileBubble";
+import Logo from "./Logo";
 import { useAuth } from "../context/AuthContext";
 
 const HIDE_CHROME = ["/test", "/report", "/onboarding", "/auth"];
@@ -30,17 +31,7 @@ function AppLayout({ children }) {
 
       {!hideChrome && (
         <header className="relative z-20 mx-auto flex max-w-[980px] items-center justify-between px-4 pb-1 pt-[calc(env(safe-area-inset-top)+14px)]">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-teal/25 bg-teal/[0.08] backdrop-blur-md">
-              <svg viewBox="0 0 24 24" className="h-5 w-5 text-teal" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <path d="M9 3h6v2H9zM10 5v6l-4 7h12l-4-7V5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M8 15h8" strokeLinecap="round" opacity="0.5" />
-              </svg>
-            </div>
-            <span className="font-body text-[18px] font-bold tracking-[0.3px] text-text-primary">
-              TestTube
-            </span>
-          </div>
+          <Logo size={28} />
           <div className="flex items-center gap-3">
             <button
               type="button"

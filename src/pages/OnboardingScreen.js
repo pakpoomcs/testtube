@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { usePreferences } from "../context/PreferencesContext";
+import Logo from "../components/Logo";
 
 const EXAMS = [
   { key: "IELTS", label: "IELTS", sub: "Global English proficiency" },
@@ -98,10 +99,7 @@ function OnboardingScreen() {
         <div className="p-8 flex flex-col gap-6">
           {/* Header */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-[20px]">🧪</span>
-              <span className="font-heading text-[18px] text-teal tracking-[2px]">TestTube</span>
-            </div>
+            <Logo size={24} />
             <span className="font-body text-[13px] text-text-tertiary">
               {step} / {TOTAL_STEPS}
             </span>
