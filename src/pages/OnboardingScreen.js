@@ -32,17 +32,22 @@ const TOTAL_STEPS = 3;
 
 function OnboardingScreen() {
   const navigate = useNavigate();
-  const { updateProfile } = useAuth();
-  const { updatePreferences } = usePreferences();
+  const { user, profile, loading, updateProfile } = useAuth();
+  const { preferences, updatePreferences } = usePreferences();
 
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
-  const [fullName, setFullName] = useState("");
-  const [selectedExams, setSelectedExams] = useState([]);
-  const [level, setLevel] = useState("intermediate");
-  const [dailyGoal, setDailyGoal] = useState(20);
+  const [fullName, setFullName] = useState(profile?.full_name || "");
+  const [selectedExams, setSelectedExams] = useState(preferences?.target_exams || []);
+  const [level, setLevel] = useState(preferences?.self_assessed_level || "intermediate");
+  const [dailyGoal, setDailyGoal] = useState(preferences?.daily_goal || 20);
+
+  // Redirect unauthenticated users to auth
+  React.useEffect(() => {
+    if (!loading && !user) navigate("/auth");
+  }, [user, loading, navigate]);
 
   function toggleExam(key) {
     setSelectedExams((prev) =>
@@ -80,6 +85,12 @@ function OnboardingScreen() {
   }
 
   const progress = (step / TOTAL_STEPS) * 100;
+
+  if (loading || !user) return (
+    <div className="tt-page flex items-center justify-center">
+      <div className="h-4 w-4 animate-pulse rounded-full bg-teal" />
+    </div>
+  );
 
   return (
     <div className="tt-page relative flex items-center justify-center overflow-hidden p-6">
