@@ -26,8 +26,7 @@ function Logo({ size = 32, wordmark = true, className = "" }) {
   const liquidY    = tubeH * (1 - liquidFill) - tipR * 0.5;
 
   // Font sizes scale with the icon
-  const fs1 = Math.round(size * 0.72);   // "Test"
-  const fs2 = Math.round(size * 0.72);   // "Tube"
+  const fs1 = Math.round(size * 0.72);   // wordmark font size
   const gap  = Math.round(size * 0.38);  // space between icon and text
 
   return (
