@@ -23,9 +23,14 @@ function AuthScreen() {
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({ email, password });
+        const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
-        setMessage("Account created! Check your email to confirm, then sign in.");
+        // If email confirmation is disabled, session is live immediately
+        if (data.session) {
+          navigate("/onboarding");
+        } else {
+          setMessage("Account created! Check your email to confirm, then sign in.");
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;

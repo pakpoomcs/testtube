@@ -10,6 +10,7 @@ import TestScreen from "./pages/TestScreen";
 import ReportScreen from "./pages/ReportScreen";
 import SinglePageHub from "./pages/SinglePageHub";
 import AuthScreen from "./pages/AuthScreen";
+import OnboardingScreen from "./pages/OnboardingScreen";
 
 function AppRoutes() {
   return (
@@ -17,6 +18,7 @@ function AppRoutes() {
       <PageTransition>
         <Routes>
           <Route path="/auth" element={<AuthScreen />} />
+          <Route path="/onboarding" element={<OnboardingScreen />} />
           <Route path="/" element={<SinglePageHub />} />
           <Route path="/practice" element={<SinglePageHub />} />
           <Route path="/test/:examId" element={<TestScreen />} />

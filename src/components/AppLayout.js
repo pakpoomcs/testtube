@@ -1,15 +1,28 @@
 // src/components/AppLayout.js
-import React, { useState } from "react";
-import { useLocation } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import BottomTabBar from "./BottomTabBar";
 import ProfileBubble from "./ProfileBubble";
+import { useAuth } from "../context/AuthContext";
 
 const HIDE_CHROME = ["/test", "/report", "/onboarding", "/auth"];
 
 function AppLayout({ children }) {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const { user, profile, loading } = useAuth();
   const hideChrome = HIDE_CHROME.some((p) => pathname.startsWith(p));
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // Redirect to onboarding if logged in but not yet completed
+  useEffect(() => {
+    if (loading) return;
+    if (!user) return;
+    if (pathname === "/onboarding" || pathname === "/auth") return;
+    if (profile && profile.onboarding_completed === false) {
+      navigate("/onboarding");
+    }
+  }, [user, profile, loading, pathname, navigate]);
 
   return (
     <div className="relative">
