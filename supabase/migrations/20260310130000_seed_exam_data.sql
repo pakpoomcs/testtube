@@ -35,7 +35,7 @@ VALUES
   (gen_random_uuid(), 'TOEIC', 'โทอิค', 'Test of English for International Communication — focuses on everyday workplace English used in global business.', 'การทดสอบภาษาอังกฤษสำหรับการสื่อสารในที่ทำงาน', 'English', 'Intermediate', false),
   (gen_random_uuid(), 'SAT', 'เอสเอทีย', 'Scholastic Assessment Test — a standardised test for US college admissions covering reading, writing, and math.', 'การทดสอบมาตรฐานสำหรับสมัครเข้ามหาวิทยาลัยในสหรัฐอเมริกา', 'English', 'Advanced', false),
   (gen_random_uuid(), 'TOEFL iBT', 'โทเฟิล', 'Test of English as a Foreign Language — measures ability to use and understand English at the university level.', 'การทดสอบวัดความสามารถด้านภาษาอังกฤษระดับมหาวิทยาลัย', 'English', 'Advanced', false)
-ON CONFLICT DO NOTHING;
+ON CONFLICT (name) DO NOTHING;
 
 SELECT id INTO ielts_id FROM exams WHERE name = 'IELTS Academic' LIMIT 1;
 SELECT id INTO toeic_id FROM exams WHERE name = 'TOEIC' LIMIT 1;
