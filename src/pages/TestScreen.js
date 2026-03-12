@@ -93,9 +93,10 @@ function TestScreen() {
 
   // ── Timer: start / resume / persist ──
   useEffect(() => {
+    if (isFreshStart) return;
     const saved = localStorage.getItem(getTimerKey(examId));
     if (saved) setElapsed(parseInt(saved, 10) || 0);
-  }, [examId]);
+  }, [examId, isFreshStart]);
 
   useEffect(() => {
     timerRef.current = setInterval(() => {
@@ -110,6 +111,11 @@ function TestScreen() {
 
   // ── Restore saved progress ──
   useEffect(() => {
+    if (isFreshStart) {
+      localStorage.removeItem(getProgressKey(examId));
+      localStorage.removeItem(getTimerKey(examId));
+      return;
+    }
     const saved = localStorage.getItem(getProgressKey(examId));
     if (saved) {
       try {
@@ -118,7 +124,7 @@ function TestScreen() {
         if (ans) setAnswers(ans);
       } catch (_) {}
     }
-  }, [examId]);
+  }, [examId, isFreshStart]);
 
   // ── Auto-save progress on change ──
   const saveProgressToLocal = useCallback(() => {
@@ -138,6 +144,11 @@ function TestScreen() {
     const values = raw.split(",").map(normalizeDifficulty).filter(Boolean);
     return Array.from(new Set(values));
   }, [location.search]);
+
+  const isFreshStart = React.useMemo(
+    () => new URLSearchParams(location.search).get("fresh") === "true",
+    [location.search]
+  );
 
   useEffect(() => {
     fetchExamAndQuestions();
@@ -185,7 +196,20 @@ function TestScreen() {
         : enriched;
 
       filteredQuestions.sort(() => Math.random() - 0.5);
-      setQuestions(filteredQuestions);
+
+      // Attach a per-session shuffled display order for MCQ/reading choices
+      const withDisplayOrder = filteredQuestions.map((q) => {
+        if (q.question_type === "mcq" || q.question_type === "reading") {
+          const opts = ["a", "b", "c", "d"].filter((o) => q[`option_${o}`]);
+          for (let i = opts.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [opts[i], opts[j]] = [opts[j], opts[i]];
+          }
+          return { ...q, displayOrder: opts };
+        }
+        return q;
+      });
+      setQuestions(withDisplayOrder);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -582,7 +606,7 @@ function MCQInput({
 }) {
   return (
     <div className="flex flex-col gap-2.5">
-      {["a", "b", "c", "d"].map((opt) => {
+      {(question.displayOrder || ["a", "b", "c", "d"]).map((opt) => {
         const text = question[`option_${opt}`];
         if (!text) return null;
         const selected = value === opt;

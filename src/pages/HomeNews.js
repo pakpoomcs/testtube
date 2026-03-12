@@ -147,6 +147,8 @@ function HomeNews() {
   const [examDifficultyFilters, setExamDifficultyFilters] = useState({});
   const [examQuestionStats, setExamQuestionStats] = useState({});
   const [examProgressStats, setExamProgressStats] = useState({});
+  const [savedExams, setSavedExams] = useState({});
+  const [confirmFresh, setConfirmFresh] = useState(null); // examId or null
 
   /* ── Data fetching ── */
 
@@ -218,6 +220,11 @@ function HomeNews() {
         });
         return next;
       });
+      const nextSavedExams = {};
+      nextExams.forEach((e) => {
+        nextSavedExams[e.id] = !!localStorage.getItem(`testtube_progress_${e.id}`);
+      });
+      setSavedExams(nextSavedExams);
     } catch (err) {
       console.error('fetchExams error:', err);
       setExamError("Could not load tests right now.");
@@ -278,6 +285,19 @@ function HomeNews() {
   function getTestUrl(examId, levels) {
     const vals = (levels?.length ? levels : DIFFICULTY_LEVELS).map(toDifficultyParam);
     return `/test/${examId}?difficulty=${vals.join(",")}`;
+  }
+
+  function getTestUrlFresh(examId, levels) {
+    const vals = (levels?.length ? levels : DIFFICULTY_LEVELS).map(toDifficultyParam);
+    return `/test/${examId}?difficulty=${vals.join(",")}&fresh=true`;
+  }
+
+  function handleStartFresh(examId, levels) {
+    localStorage.removeItem(`testtube_progress_${examId}`);
+    localStorage.removeItem(`testtube_timer_${examId}`);
+    setSavedExams((prev) => ({ ...prev, [examId]: false }));
+    setConfirmFresh(null);
+    navigate(getTestUrlFresh(examId, levels));
   }
 
   /* ── Render ── */
@@ -384,7 +404,7 @@ function HomeNews() {
                       {meta.tag}
                     </span>
                     <span className="font-mono text-[12px] tracking-wide text-text-tertiary">
-                      {totalQ} Q
+                      {filteredQ} Q
                     </span>
                   </div>
 
@@ -433,16 +453,62 @@ function HomeNews() {
                     })}
                   </div>
 
-                  {/* Start button */}
+                  {/* Start / Resume / Start Fresh buttons */}
                   {hasQuestions ? (
-                    <button
-                      type="button"
-                      onClick={() => navigate(getTestUrl(exam.id, selectedDiffs))}
-                      className={`flex w-full items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r py-3 text-[13px] font-bold text-white transition-opacity hover:opacity-90 ${meta.buttonCls}`}
-                    >
-                      Start Practice
-                      <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M6 3l5 5-5 5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                    </button>
+                    savedExams[exam.id] ? (
+                      <>
+                        {confirmFresh === exam.id ? (
+                          <div className="rounded-lg border border-amber-400/40 bg-amber-500/8 px-3 py-2.5">
+                            <p className="mb-2 text-center font-body text-[11px] text-amber-300">
+                              Your saved progress will be lost.
+                            </p>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleStartFresh(exam.id, selectedDiffs)}
+                                className="flex-1 rounded-md border border-amber-400/50 bg-amber-500/15 py-1.5 text-[11px] font-bold text-amber-300 transition-colors hover:bg-amber-500/25"
+                              >
+                                Yes, start fresh
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmFresh(null)}
+                                className="flex-1 rounded-md border border-border/50 bg-card/40 py-1.5 text-[11px] font-semibold text-text-secondary transition-colors hover:bg-elevated/60"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => navigate(getTestUrl(exam.id, selectedDiffs))}
+                              className={`flex flex-1 items-center justify-center gap-1 rounded-lg bg-gradient-to-r py-3 text-[13px] font-bold text-white transition-opacity hover:opacity-90 ${meta.buttonCls}`}
+                            >
+                              Resume
+                              <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M6 3l5 5-5 5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setConfirmFresh(exam.id)}
+                              className="rounded-lg border border-border/60 bg-card/40 px-3 py-3 text-[11px] font-semibold text-text-tertiary transition-colors hover:border-border-strong hover:text-text-secondary"
+                            >
+                              Start Fresh
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => navigate(getTestUrl(exam.id, selectedDiffs))}
+                        className={`flex w-full items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r py-3 text-[13px] font-bold text-white transition-opacity hover:opacity-90 ${meta.buttonCls}`}
+                      >
+                        Start Practice
+                        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M6 3l5 5-5 5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                      </button>
+                    )
                   ) : (
                     <button
                       disabled
