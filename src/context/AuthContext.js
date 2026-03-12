@@ -36,14 +36,20 @@ export function AuthProvider({ children }) {
   // ── Listen to Supabase auth state changes ──
   useEffect(() => {
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      const u = session?.user ?? null
-      setUser(u)
-      if (u) {
-        fetchProfile(u.id)
-      }
-      setLoading(false)
-    })
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        const u = session?.user ?? null
+        setUser(u)
+        if (u) {
+          fetchProfile(u.id)
+        }
+        setLoading(false)
+      })
+      .catch((err) => {
+        console.error('getSession error:', err)
+        if (isServiceUnavailableError(err)) setServiceUnavailable(true)
+        setLoading(false)
+      })
 
     // Subscribe to future changes (sign in, sign out, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(

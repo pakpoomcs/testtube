@@ -11,6 +11,7 @@ import Logo from "../components/Logo";
 function ResetPasswordScreen() {
   const navigate = useNavigate();
   const [ready, setReady] = useState(false);     // session recovered from link
+  const [linkExpired, setLinkExpired] = useState(false);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -23,7 +24,11 @@ function ResetPasswordScreen() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") setReady(true);
     });
-    return () => subscription.unsubscribe();
+    const timeout = setTimeout(() => setLinkExpired(true), 30000);
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, []);
 
   async function handleReset() {
@@ -67,14 +72,19 @@ function ResetPasswordScreen() {
           </div>
         ) : !ready ? (
           <div className="flex flex-col gap-3 py-4">
-            <h1 className="font-body font-bold text-[22px] text-text-primary">Waiting for link…</h1>
+            <h1 className="font-body font-bold text-[22px] text-text-primary">
+              {linkExpired ? "Link expired" : "Waiting for link…"}
+            </h1>
             <p className="font-body text-[14px] text-text-secondary leading-relaxed">
-              Open the reset link from your email to continue. If you didn't request a reset,{" "}
+              {linkExpired
+                ? "This reset link has expired or is invalid. Please request a new one."
+                : "Open the reset link from your email to continue. If you didn't request a reset,"}
+              {" "}
               <button
                 onClick={() => navigate("/auth")}
                 className="bg-transparent border-none text-teal font-bold text-[14px] font-body cursor-pointer p-0"
               >
-                go back
+                {linkExpired ? "Request a new link" : "go back"}
               </button>.
             </p>
           </div>

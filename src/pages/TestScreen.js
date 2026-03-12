@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { useAuth } from "../context/AuthContext";
+import { Haptics, ImpactStyle } from "@capacitor/haptics";
 import { useSubscription } from "../context/SubscriptionContext";
 
 // ── Sound Effects (Web Audio API) ──
@@ -48,6 +49,13 @@ function playCorrectSound() {
 function playWrongSound() {
   playTone(300, 0.2, "sawtooth", 0.12);
   setTimeout(() => playTone(250, 0.3, "sawtooth", 0.12), 150);
+}
+
+async function hapticCorrect() {
+  try { await Haptics.impact({ style: ImpactStyle.Light }); } catch (_) {}
+}
+async function hapticWrong() {
+  try { await Haptics.impact({ style: ImpactStyle.Medium }); } catch (_) {}
 }
 
 // ── Timer helpers ──
@@ -237,8 +245,8 @@ function TestScreen() {
     if (!hasAnswer) return;
     setSubmitted(true);
     const correct = checkCorrect(currentQuestion, answers[currentQuestion.id]);
-    if (correct) playCorrectSound();
-    else playWrongSound();
+    if (correct) { playCorrectSound(); hapticCorrect(); }
+    else          { playWrongSound();  hapticWrong();  }
   }
 
   function handleSaveAndExit() {
@@ -436,6 +444,7 @@ function TestScreen() {
       <div className="flex items-center justify-between px-5 py-4 border-b border-border">
         <button
           onClick={() => navigate("/practice")}
+          aria-label="Close"
           className="bg-transparent border-none text-text-secondary text-[18px] cursor-pointer px-2 py-1 rounded-md hover:bg-elevated transition-colors"
         >
           ✕

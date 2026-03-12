@@ -12,7 +12,7 @@ const config: CapacitorConfig = {
   },
   ios: {
     contentInset: 'always',       // respect safe areas (notch, home bar)
-    scrollEnabled: false,         // app handles its own scroll
+    scrollEnabled: true,
     backgroundColor: '#0a0a0e',
   },
   android: {

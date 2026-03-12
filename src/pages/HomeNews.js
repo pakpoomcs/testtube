@@ -139,6 +139,7 @@ function HomeNews() {
 
   const [stories, setStories] = useState([]);
   const [newsLoading, setNewsLoading] = useState(true);
+  const [newsError, setNewsError] = useState(false);
 
   const [exams, setExams] = useState([]);
   const [examLoading, setExamLoading] = useState(true);
@@ -238,8 +239,9 @@ function HomeNews() {
 
   async function fetchStories() {
     setNewsLoading(true);
+    setNewsError(false);
     try {
-      const responses = await Promise.all(
+      const results = await Promise.allSettled(
         SOURCES.map(async ({ subreddit, label }) => {
           const res = await fetch(`https://www.reddit.com/r/${subreddit}/hot.json?limit=6`);
           if (!res.ok) throw new Error(`r/${subreddit}`);
@@ -253,11 +255,18 @@ function HomeNews() {
           }));
         })
       );
-      const merged = Array.from(new Map(responses.flat().map((s) => [s.id, s])).values());
+      const stories = results
+        .filter((r) => r.status === "fulfilled")
+        .flatMap((r) => r.value);
+      if (stories.length === 0 && results.every((r) => r.status === "rejected")) {
+        setNewsError(true);
+      }
+      const merged = Array.from(new Map(stories.map((s) => [s.id, s])).values());
       merged.sort((a, b) => b.createdAt - a.createdAt);
       setStories(merged.slice(0, 12));
     } catch (err) {
       console.error('fetchStories error:', err);
+      setNewsError(true);
       setStories([]);
     } finally {
       setNewsLoading(false);
@@ -573,6 +582,9 @@ function HomeNews() {
 
         {newsLoading && newsItems.length === 0 && (
           <p className="mt-6 text-center font-body text-[13px] text-text-secondary">Loading news...</p>
+        )}
+        {!newsLoading && newsError && newsItems.length === 0 && (
+          <p className="mt-6 text-center font-body text-[13px] text-text-tertiary">News unavailable right now.</p>
         )}
       </div>
     </div>
