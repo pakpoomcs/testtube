@@ -5,6 +5,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { PreferencesProvider } from "./context/PreferencesContext";
 import { SubscriptionProvider } from "./context/SubscriptionContext";
 import { ThemeProvider } from "./context/ThemeContext";
+import { DashboardProvider } from "./context/DashboardContext";
 import AppLayout from "./components/AppLayout";
 import PageTransition from "./components/PageTransition";
 import TestScreen from "./pages/TestScreen";
@@ -14,6 +15,7 @@ import AuthScreen from "./pages/AuthScreen";
 import OnboardingScreen from "./pages/OnboardingScreen";
 import ResetPasswordScreen from "./pages/ResetPasswordScreen";
 import PricingPage from "./pages/PricingPage";
+import TikTokShopDashboard from "./pages/TikTokShopDashboard";
 
 function AppRoutes() {
   return (
@@ -24,6 +26,7 @@ function AppRoutes() {
           <Route path="/onboarding" element={<OnboardingScreen />} />
           <Route path="/reset-password" element={<ResetPasswordScreen />} />
           <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/tiktok-shop" element={<TikTokShopDashboard />} />
           <Route path="/" element={<SinglePageHub />} />
           <Route path="/practice" element={<SinglePageHub />} />
           <Route path="/test/:examId" element={<TestScreen />} />
@@ -42,11 +45,13 @@ function App() {
     <ThemeProvider>
       <AuthProvider>
         <PreferencesProvider>
-        <SubscriptionProvider>
-          <BrowserRouter>
-            <AppRoutes />
-          </BrowserRouter>
-        </SubscriptionProvider>
+          <SubscriptionProvider>
+            <DashboardProvider>
+              <BrowserRouter>
+                <AppRoutes />
+              </BrowserRouter>
+            </DashboardProvider>
+          </SubscriptionProvider>
         </PreferencesProvider>
       </AuthProvider>
     </ThemeProvider>
